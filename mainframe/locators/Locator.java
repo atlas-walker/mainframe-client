@@ -1,4 +1,4 @@
-package org.tn5250j.mainframe.locators;
+package com.bns.etbic.craft.mainframe.locators;
 
 import java.util.Collections;
 import java.util.List;

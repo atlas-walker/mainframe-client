@@ -1,4 +1,4 @@
-package org.tn5250j.mainframe;
+package com.bns.etbic.craft.mainframe;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -13,19 +13,19 @@ import org.tn5250j.Session5250;
 import org.tn5250j.framework.tn5250.Screen5250;
 import org.tn5250j.framework.tn5250.ScreenField;
 import org.tn5250j.framework.tn5250.ScreenFields;
-import org.tn5250j.mainframe.elements.FieldActions;
-import org.tn5250j.mainframe.elements.MainframeField;
-import org.tn5250j.mainframe.elements.ScreenRegion;
-import org.tn5250j.mainframe.elements.ScreenSnapshot;
-import org.tn5250j.mainframe.internal.ScreenSync;
-import org.tn5250j.mainframe.keys.Key;
-import org.tn5250j.mainframe.locators.Locator;
-import org.tn5250j.mainframe.locators.LocatorContext;
-import org.tn5250j.mainframe.screenshot.ScreenshotFormat;
-import org.tn5250j.mainframe.screenshot.ScreenshotRenderer;
-import org.tn5250j.mainframe.transport.SessionFactory;
-import org.tn5250j.mainframe.ui.HeadedWindow;
-import org.tn5250j.mainframe.waits.ExpectedCondition;
+import com.bns.etbic.craft.mainframe.elements.FieldActions;
+import com.bns.etbic.craft.mainframe.elements.MainframeField;
+import com.bns.etbic.craft.mainframe.elements.ScreenRegion;
+import com.bns.etbic.craft.mainframe.elements.ScreenSnapshot;
+import com.bns.etbic.craft.mainframe.internal.ScreenSync;
+import com.bns.etbic.craft.mainframe.keys.Key;
+import com.bns.etbic.craft.mainframe.locators.Locator;
+import com.bns.etbic.craft.mainframe.locators.LocatorContext;
+import com.bns.etbic.craft.mainframe.screenshot.ScreenshotFormat;
+import com.bns.etbic.craft.mainframe.screenshot.ScreenshotRenderer;
+import com.bns.etbic.craft.mainframe.transport.SessionFactory;
+import com.bns.etbic.craft.mainframe.ui.HeadedWindow;
+import com.bns.etbic.craft.mainframe.waits.ExpectedCondition;
 
 public final class MainframeDriver implements AutoCloseable {
 
@@ -54,7 +54,7 @@ public final class MainframeDriver implements AutoCloseable {
         screen = session.getScreen();
         sync = new ScreenSync(screen);
         if (!options.headless()) {
-            headed = new HeadedWindow(options.sessionName() + " — " + options.host(), screen, renderer);
+            headed = new HeadedWindow(options.sessionName() + " — " + options.host(), session);
         }
         connected = true;
     }
@@ -62,10 +62,6 @@ public final class MainframeDriver implements AutoCloseable {
     public synchronized void disconnect() {
         if (!connected) return;
         try {
-            if (headed != null) {
-                headed.close();
-                headed = null;
-            }
             if (sync != null) {
                 sync.detach();
                 sync = null;
@@ -73,11 +69,45 @@ public final class MainframeDriver implements AutoCloseable {
             if (session != null) {
                 session.disconnect();
             }
+            if (headed != null) {
+                headed.markSessionEnded();
+            }
         } finally {
             connected = false;
             session = null;
             screen = null;
         }
+    }
+
+    /**
+     * Programmatically dispose the headed window if one is open. Safe to call
+     * even in headless mode (no-op).
+     */
+    public void closeHeadedWindow() {
+        if (headed != null) {
+            headed.close();
+            headed = null;
+        }
+    }
+
+    /**
+     * Block until the headed window is disposed by the user (or by
+     * {@link #closeHeadedWindow()}). No-op in headless mode.
+     */
+    public void awaitHeadedWindowClose() {
+        if (headed == null) return;
+        try {
+            headed.awaitClose();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    /**
+     * True when running in headed mode and the window has not been disposed.
+     */
+    public boolean isHeadedWindowOpen() {
+        return headed != null && !headed.isDisposed();
     }
 
     public boolean isConnected() {

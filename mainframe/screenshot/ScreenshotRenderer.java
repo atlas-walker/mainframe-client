@@ -1,4 +1,4 @@
-package org.tn5250j.mainframe.screenshot;
+package com.bns.etbic.craft.mainframe.screenshot;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -8,7 +8,7 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 
 import org.tn5250j.TN5250jConstants;
-import org.tn5250j.mainframe.elements.ScreenSnapshot;
+import com.bns.etbic.craft.mainframe.elements.ScreenSnapshot;
 
 public final class ScreenshotRenderer {
 

@@ -1,4 +1,4 @@
-package org.tn5250j.mainframe.locators;
+package com.bns.etbic.craft.mainframe.locators;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,10 +8,10 @@ import java.util.regex.Pattern;
 import org.tn5250j.framework.tn5250.Screen5250;
 import org.tn5250j.framework.tn5250.ScreenField;
 import org.tn5250j.framework.tn5250.ScreenFields;
-import org.tn5250j.mainframe.MainframeException;
-import org.tn5250j.mainframe.elements.MainframeField;
-import org.tn5250j.mainframe.elements.ScreenRegion;
-import org.tn5250j.mainframe.elements.ScreenSnapshot;
+import com.bns.etbic.craft.mainframe.MainframeException;
+import com.bns.etbic.craft.mainframe.elements.MainframeField;
+import com.bns.etbic.craft.mainframe.elements.ScreenRegion;
+import com.bns.etbic.craft.mainframe.elements.ScreenSnapshot;
 
 public final class By {
 

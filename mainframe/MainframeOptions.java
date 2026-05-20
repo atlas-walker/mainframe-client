@@ -1,4 +1,4 @@
-package org.tn5250j.mainframe;
+package com.bns.etbic.craft.mainframe;
 
 import java.time.Duration;
 import java.util.Objects;

@@ -1,4 +1,4 @@
-package org.tn5250j.mainframe.screenshot;
+package com.bns.etbic.craft.mainframe.screenshot;
 
 public enum ScreenshotFormat {
     PNG("png"),

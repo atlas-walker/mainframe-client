@@ -1,4 +1,4 @@
-package org.tn5250j.mainframe.example;
+package com.bns.etbic.craft.mainframe.example;
 
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -7,18 +7,22 @@ import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 
-import org.tn5250j.mainframe.MainframeDriver;
-import org.tn5250j.mainframe.locators.By;
-import org.tn5250j.mainframe.waits.MainframeConditions;
+import com.bns.etbic.craft.mainframe.MainframeDriver;
+import com.bns.etbic.craft.mainframe.locators.By;
+import com.bns.etbic.craft.mainframe.waits.MainframeConditions;
 import org.tn5250j.tools.logging.TN5250jLogFactory;
 import org.tn5250j.tools.logging.TN5250jLogger;
 
 /**
  * Runnable smoke / quick-start showing the mainframe façade.
- * Equivalent to the original Smoke.java but using the new public API.
  *
- * Run with:
- *   java -cp out:lib/runtime/* org.tn5250j.mainframe.example.LoginExample
+ * Headless (default): connects, snapshots the sign-on screen, saves a PNG, exits.
+ * Headed:             same, but opens an interactive tn5250j window and blocks
+ *                     until the user closes it so you can keep clicking/typing.
+ *
+ * Run:
+ *   java -cp out:lib/runtime/* com.bns.etbic.craft.mainframe.example.LoginExample
+ *   java -Dheaded=true -cp out:lib/runtime/* com.bns.etbic.craft.mainframe.example.LoginExample
  */
 public final class LoginExample {
 
@@ -31,14 +35,15 @@ public final class LoginExample {
         String device = systemOr(args, 1, "deviceName", "BNS31954");
         boolean headed = Boolean.parseBoolean(System.getProperty("headed", "false"));
 
-        try (MainframeDriver driver = MainframeDriver.builder()
-                .host(host).port(23)
-                .codePage("37")
-                .deviceName(device)
-                .headless(!headed)
-                .defaultTimeout(Duration.ofSeconds(30))
-                .build()) {
+        MainframeDriver driver = MainframeDriver.builder()
+            .host(host).port(23)
+            .codePage("37")
+            .deviceName(device)
+            .headless(!headed)
+            .defaultTimeout(Duration.ofSeconds(30))
+            .build();
 
+        try {
             System.out.println("Connecting to " + host + " (device=" + device + ", headed=" + headed + ") ...");
             driver.connect();
 
@@ -53,12 +58,20 @@ public final class LoginExample {
             driver.screenshot(Paths.get("signon.png"));
             System.out.println("Saved screenshot: signon.png");
 
-            // Demonstrate locator usage without actually submitting credentials.
             try {
                 System.out.println("First input field: " + driver.findField(By.firstInputField()));
             } catch (RuntimeException e) {
                 System.out.println("Could not locate first input field: " + e.getMessage());
             }
+
+            // Keep the interactive window open until the user closes it.
+            // In headless mode this returns immediately.
+            if (headed) {
+                System.out.println("Headed window is open. Close it (X) to exit.");
+                driver.awaitHeadedWindowClose();
+            }
+        } finally {
+            driver.disconnect();
         }
         System.out.println("Done.");
     }

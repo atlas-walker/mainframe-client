@@ -1,8 +1,8 @@
-package org.tn5250j.mainframe.locators;
+package com.bns.etbic.craft.mainframe.locators;
 
 import org.tn5250j.framework.tn5250.Screen5250;
-import org.tn5250j.mainframe.elements.FieldActions;
-import org.tn5250j.mainframe.elements.ScreenSnapshot;
+import com.bns.etbic.craft.mainframe.elements.FieldActions;
+import com.bns.etbic.craft.mainframe.elements.ScreenSnapshot;
 
 public interface LocatorContext {
     Screen5250 screen();

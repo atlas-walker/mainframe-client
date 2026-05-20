@@ -1,4 +1,4 @@
-package org.tn5250j.mainframe;
+package com.bns.etbic.craft.mainframe;
 
 public class MainframeException extends RuntimeException {
 

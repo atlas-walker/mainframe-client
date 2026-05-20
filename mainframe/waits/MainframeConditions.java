@@ -1,8 +1,8 @@
-package org.tn5250j.mainframe.waits;
+package com.bns.etbic.craft.mainframe.waits;
 
 import java.time.Duration;
 
-import org.tn5250j.mainframe.elements.ScreenSnapshot;
+import com.bns.etbic.craft.mainframe.elements.ScreenSnapshot;
 
 public final class MainframeConditions {
 

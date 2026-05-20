@@ -1,88 +1,102 @@
-package org.tn5250j.mainframe.ui;
+package com.bns.etbic.craft.mainframe.ui;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.Graphics;
 import java.awt.GraphicsEnvironment;
-import java.awt.image.BufferedImage;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.concurrent.CountDownLatch;
 
 import javax.swing.JFrame;
-import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
-import org.tn5250j.event.ScreenListener;
-import org.tn5250j.framework.tn5250.Screen5250;
-import org.tn5250j.mainframe.elements.ScreenSnapshot;
-import org.tn5250j.mainframe.screenshot.ScreenshotRenderer;
+import org.tn5250j.Session5250;
+import org.tn5250j.SessionPanel;
 
-public final class HeadedWindow implements ScreenListener {
+/**
+ * Headed terminal window backed by tn5250j's real {@link SessionPanel} — fully
+ * interactive (keyboard + mouse) and uses tn5250j's own repaint pipeline, so
+ * local keystrokes from the driver and from the user appear immediately.
+ *
+ * <p>Lifecycle:
+ * <ul>
+ *   <li>The window does not auto-dispose when the driver disconnects. The user
+ *       may keep inspecting the last screen state.</li>
+ *   <li>Clicking the X button disposes the window.</li>
+ *   <li>{@link #close()} programmatically disposes the window.</li>
+ *   <li>{@link #awaitClose()} blocks until the window is disposed.</li>
+ * </ul>
+ */
+public final class HeadedWindow {
 
-    private final Screen5250 screen;
-    private final ScreenshotRenderer renderer;
     private final JFrame frame;
-    private final RenderPanel panel;
+    private final SessionPanel panel;
+    private final CountDownLatch closed = new CountDownLatch(1);
+    private volatile boolean disposed;
 
-    public HeadedWindow(String title, Screen5250 screen, ScreenshotRenderer renderer) {
+    public HeadedWindow(String title, Session5250 session) {
         if (GraphicsEnvironment.isHeadless()) {
             throw new IllegalStateException("Cannot open headed window in headless JVM");
         }
-        this.screen = screen;
-        this.renderer = renderer;
-        this.panel = new RenderPanel();
-        this.frame = new JFrame(title);
-        this.frame.setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
-        this.frame.setLayout(new BorderLayout());
-        this.frame.add(panel, BorderLayout.CENTER);
-        BufferedImage initial = renderer.render(ScreenSnapshot.take(screen));
-        panel.setImage(initial);
-        Dimension size = new Dimension(initial.getWidth(), initial.getHeight());
-        panel.setPreferredSize(size);
-        frame.pack();
-        frame.setLocationByPlatform(true);
-        frame.setVisible(true);
-        screen.addScreenListener(this);
+        this.panel = new SessionPanel(session);
+        this.frame = buildFrame(title, panel);
     }
 
-    public void close() {
-        screen.removeScreenListener(this);
-        SwingUtilities.invokeLater(frame::dispose);
+    private JFrame buildFrame(String title, SessionPanel panel) {
+        final JFrame f = new JFrame(title);
+        try {
+            SwingUtilities.invokeAndWait(() -> {
+                f.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+                f.setLayout(new BorderLayout());
+                f.add(panel, BorderLayout.CENTER);
+                f.addWindowListener(new WindowAdapter() {
+                    @Override
+                    public void windowClosed(WindowEvent e) {
+                        disposed = true;
+                        closed.countDown();
+                    }
+                });
+                f.pack();
+                f.setLocationByPlatform(true);
+                f.setVisible(true);
+                panel.requestFocusInWindow();
+            });
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to initialize headed window", e);
+        }
+        return f;
     }
 
-    @Override
-    public void onScreenChanged(int inUpdate, int startRow, int startCol, int endRow, int endCol) {
-        repaintAsync();
-    }
-
-    @Override
-    public void onScreenSizeChanged(int rows, int cols) {
-        repaintAsync();
-    }
-
-    private void repaintAsync() {
+    /**
+     * Marks the window as "session ended" by updating the title. Does not
+     * dispose the window — the user may keep inspecting it.
+     */
+    public void markSessionEnded() {
         SwingUtilities.invokeLater(() -> {
-            BufferedImage img = renderer.render(ScreenSnapshot.take(screen));
-            panel.setImage(img);
-            Dimension size = new Dimension(img.getWidth(), img.getHeight());
-            if (!size.equals(panel.getPreferredSize())) {
-                panel.setPreferredSize(size);
-                frame.pack();
+            if (!disposed) {
+                frame.setTitle(frame.getTitle() + "  [disconnected]");
             }
-            panel.repaint();
         });
     }
 
-    private static final class RenderPanel extends JPanel {
-        private static final long serialVersionUID = 1L;
-        private volatile BufferedImage image;
-        void setImage(BufferedImage image) { this.image = image; }
-        @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            BufferedImage img = this.image;
-            if (img != null) {
-                g.drawImage(img, 0, 0, null);
+    public void close() {
+        if (disposed) return;
+        SwingUtilities.invokeLater(() -> {
+            if (!disposed) {
+                frame.dispose();
             }
-        }
+        });
+    }
+
+    public void awaitClose() throws InterruptedException {
+        closed.await();
+    }
+
+    public boolean isDisposed() {
+        return disposed;
+    }
+
+    public SessionPanel panel() {
+        return panel;
     }
 }

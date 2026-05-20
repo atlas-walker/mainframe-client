@@ -1,4 +1,4 @@
-package org.tn5250j.mainframe.elements;
+package com.bns.etbic.craft.mainframe.elements;
 
 import java.util.regex.Pattern;
 

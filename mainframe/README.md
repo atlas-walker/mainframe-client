@@ -7,10 +7,10 @@ WebDriver-flavoured API for automating AS/400 / IBM i green screens.
 
 ```java
 import java.time.Duration;
-import org.tn5250j.mainframe.MainframeDriver;
-import org.tn5250j.mainframe.keys.Key;
-import org.tn5250j.mainframe.locators.By;
-import org.tn5250j.mainframe.waits.MainframeConditions;
+import com.bns.etbic.craft.mainframe.MainframeDriver;
+import com.bns.etbic.craft.mainframe.keys.Key;
+import com.bns.etbic.craft.mainframe.locators.By;
+import com.bns.etbic.craft.mainframe.waits.MainframeConditions;
 
 try (MainframeDriver driver = MainframeDriver.builder()
         .host("as400.example.com").port(23)
@@ -75,7 +75,7 @@ This module is intentionally self-contained:
 ```bash
 # from repo root
 mvn -q compile
-java -cp out:lib/runtime/* org.tn5250j.mainframe.example.LoginExample
+java -cp out:lib/runtime/* com.bns.etbic.craft.mainframe.example.LoginExample
 ```
 
 (or run `LoginExample` from your IDE — it connects, prints the sign-on screen, writes `signon.png`, and disconnects.)

@@ -1,4 +1,4 @@
-package org.tn5250j.mainframe.internal;
+package com.bns.etbic.craft.mainframe.internal;
 
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;

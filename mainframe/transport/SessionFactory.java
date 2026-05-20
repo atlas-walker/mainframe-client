@@ -1,12 +1,12 @@
-package org.tn5250j.mainframe.transport;
+package com.bns.etbic.craft.mainframe.transport;
 
 import java.util.Properties;
 
 import org.tn5250j.Session5250;
 import org.tn5250j.TN5250jConstants;
 import org.tn5250j.framework.common.SessionManager;
-import org.tn5250j.mainframe.MainframeException;
-import org.tn5250j.mainframe.MainframeOptions;
+import com.bns.etbic.craft.mainframe.MainframeException;
+import com.bns.etbic.craft.mainframe.MainframeOptions;
 
 public final class SessionFactory {
 

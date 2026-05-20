@@ -1,4 +1,4 @@
-package org.tn5250j.mainframe.keys;
+package com.bns.etbic.craft.mainframe.keys;
 
 import org.tn5250j.keyboard.KeyMnemonic;
 

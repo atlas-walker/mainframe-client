@@ -1,4 +1,4 @@
-package org.tn5250j.mainframe.elements;
+package com.bns.etbic.craft.mainframe.elements;
 
 import org.tn5250j.framework.tn5250.ScreenField;
 
