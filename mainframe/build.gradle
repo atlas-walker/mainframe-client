@@ -1,0 +1,47 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.bns.etbic.craft'
+version = '0.1.0-SNAPSHOT'
+
+java {
+    // El código es compatible con Java 8+. Compilamos a 17, que es el piso que
+    // Gradle 9 ya exige para correr, así no hace falta provisionar otro JDK.
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Fork publicado del emulador. Arrastra log4j 1.2.17, slf4j y jt400 de forma
+    // transitiva, así que el example (org.apache.log4j.*) compila sin nada más.
+    implementation 'com.github.vebqa:tn5250j:0.7.6.4'
+}
+
+application {
+    // Clase de prueba que se corre con: ./gradlew run
+    mainClass = 'com.bns.etbic.craft.mainframe.example.LoginExample'
+}
+
+// Permite pasar host/device/headed desde la línea de comandos, p.ej.:
+//   ./gradlew run -Dheaded=true -Dhost=MI.HOST -DdeviceName=WS00001
+// o por argumentos posicionales:
+//   ./gradlew run --args="MI.HOST WS00001"
+tasks.named('run', JavaExec) {
+    standardInput = System.in
+    ['headed', 'host', 'deviceName'].each { prop ->
+        def val = System.getProperty(prop)
+        if (val != null) {
+            systemProperty prop, val
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}

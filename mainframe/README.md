@@ -59,23 +59,35 @@ Conversion to/from tn5250j's 0-based field coordinates happens internally.
 
 The AS/400 / IBM i Telnet server closes the session if no `SESSION_DEVICE_NAME` (a.k.a. WorkstationID) is supplied. The builder rejects missing/blank device names eagerly so you fail fast at construction time instead of after the host hangs up.
 
-## Moving this module to another project
+## Build & run (Gradle)
 
-This module is intentionally self-contained:
-
-- No dependencies beyond `tn5250j` and its existing runtime jars.
-- The leaf package is **`mainframe`** — the team's automation framework uses the same leaf name.
-- The `org.tn5250j.` prefix is a placeholder for development inside this fork. To move:
-  1. Copy `src/org/tn5250j/mainframe/` into the target project.
-  2. Rename the package root with your IDE (or `sed -i 's/org\.tn5250j\.mainframe/com\.yourframework\.mainframe/g'`).
-  3. Ensure `tn5250j` is on the classpath (the existing `lib/runtime/*.jar` set is enough).
-
-## Try it
+This module is a self-contained Gradle project. You don't need Gradle installed —
+the wrapper downloads it on first run.
 
 ```bash
-# from repo root
-mvn -q compile
-java -cp out:lib/runtime/* com.bns.etbic.craft.mainframe.example.LoginExample
+# compile
+./gradlew build
+
+# run the example (LoginExample)
+./gradlew run
+
+# override host / device / headed window:
+./gradlew run -Dhost=MI.HOST -DdeviceName=WS00001 -Dheaded=true
+# or positionally:
+./gradlew run --args="MI.HOST WS00001"
 ```
 
-(or run `LoginExample` from your IDE — it connects, prints the sign-on screen, writes `signon.png`, and disconnects.)
+The example connects, prints the sign-on screen, writes `signon.png`, and disconnects.
+You can also run/debug `LoginExample` directly from your IDE (import as a Gradle project).
+
+The only declared dependency is the published fork
+`com.github.vebqa:tn5250j:0.7.6.4`, which pulls in `log4j`, `slf4j`, and `jt400`
+transitively — nothing else to wire up.
+
+## Moving this module into the craft framework
+
+The package is already `com.bns.etbic.craft.mainframe`, so promoting it is mostly a copy:
+
+1. Copy `src/main/java/com/bns/etbic/craft/mainframe/` into the craft source tree.
+2. Drop the `example/` package (it's only the local smoke test).
+3. Make sure craft has `com.github.vebqa:tn5250j:0.7.6.4` on its classpath.

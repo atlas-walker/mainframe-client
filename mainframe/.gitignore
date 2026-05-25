@@ -1,0 +1,14 @@
+# Gradle
+/.gradle/
+/build/
+
+# IDE
+/.idea/
+*.iml
+/.vscode/
+
+# Salidas del example
+*.png
+
+# macOS
+.DS_Store
