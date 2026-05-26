@@ -1,6 +1,7 @@
 package com.bns.etbic.craft.mainframe.waits;
 
 import java.time.Duration;
+import java.util.Arrays;
 
 import com.bns.etbic.craft.mainframe.elements.ScreenSnapshot;
 
@@ -63,20 +64,20 @@ public final class MainframeConditions {
     public static ExpectedCondition<Boolean> screenStable(final Duration window) {
         final long quietNanos = window.toNanos();
         return new ExpectedCondition<Boolean>() {
-            long firstSeenAt = -1;
-            long lastTimestamp = -1;
+            // Compara el CONTENIDO de la pantalla entre polls. `timestamp` no sirve
+            // porque es el instante en que se creó el snapshot (cambia en cada poll),
+            // no el de la última vez que el host repintó la pantalla.
+            char[] lastText = null;
+            long stableSince = -1;
             @Override public Boolean apply(ScreenSnapshot snap) {
                 long now = System.nanoTime();
-                if (snap.timestamp() != lastTimestamp) {
-                    lastTimestamp = snap.timestamp();
-                    firstSeenAt = now;
+                char[] text = snap.textPlane();
+                if (lastText == null || !Arrays.equals(text, lastText)) {
+                    lastText = text;       // primer muestreo o la pantalla cambió
+                    stableSince = now;     // reinicia la ventana de quietud
                     return null;
                 }
-                if (firstSeenAt < 0) {
-                    firstSeenAt = now;
-                    return null;
-                }
-                return (now - firstSeenAt) >= quietNanos ? Boolean.TRUE : null;
+                return (now - stableSince) >= quietNanos ? Boolean.TRUE : null;
             }
             @Override public String describe() {
                 return "screenStable(" + window.toMillis() + "ms)";
