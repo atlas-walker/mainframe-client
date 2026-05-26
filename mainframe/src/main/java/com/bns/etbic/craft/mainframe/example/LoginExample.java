@@ -8,6 +8,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 
 import com.bns.etbic.craft.mainframe.MainframeDriver;
+import com.bns.etbic.craft.mainframe.keys.Key;
 import com.bns.etbic.craft.mainframe.locators.By;
 import com.bns.etbic.craft.mainframe.waits.MainframeConditions;
 import org.tn5250j.tools.logging.TN5250jLogFactory;
@@ -34,6 +35,10 @@ public final class LoginExample {
         String host = systemOr(args, 0, "host", "TBNSIMAGE.EBSS.BNS");
         String device = systemOr(args, 1, "deviceName", "BNS31954");
         boolean headed = Boolean.parseBoolean(System.getProperty("headed", "false"));
+
+        // Credenciales desde variables de entorno: `user` y `password`.
+        String user = requireEnv("user");
+        String password = requireEnv("password");
 
         MainframeDriver driver = MainframeDriver.builder()
             .host(host).port(23)
@@ -64,6 +69,21 @@ public final class LoginExample {
                 System.out.println("Could not locate first input field: " + e.getMessage());
             }
 
+            System.out.println("Filling sign-on form ...");
+            driver.findField(By.labelLeftOf("User")).type(user);
+            driver.findField(By.labelLeftOf("Password")).type(password);
+            driver.press(Key.ENTER);
+
+            // Esperar a que el host repinte tras enviar las credenciales.
+            driver.waitFor(MainframeConditions.screenStable(Duration.ofSeconds(2)));
+
+            System.out.println("---- Screen after sign-on ----");
+            for (String row : driver.getScreen().allRows()) {
+                System.out.println(row);
+            }
+            driver.screenshot(Paths.get("after-login.png"));
+            System.out.println("Saved screenshot: after-login.png");
+
             // Keep the interactive window open until the user closes it.
             // In headless mode this returns immediately.
             if (headed) {
@@ -74,6 +94,15 @@ public final class LoginExample {
             driver.disconnect();
         }
         System.out.println("Done.");
+    }
+
+    private static String requireEnv(String name) {
+        String value = System.getenv(name);
+        if (value == null || value.isEmpty()) {
+            throw new IllegalStateException(
+                "Missing environment variable: " + name + " (set `user` and `password`)");
+        }
+        return value;
     }
 
     private static String systemOr(String[] args, int idx, String prop, String fallback) {
