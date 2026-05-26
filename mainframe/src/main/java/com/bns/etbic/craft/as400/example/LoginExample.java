@@ -1,0 +1,133 @@
+package com.bns.etbic.craft.as400.example;
+
+import java.nio.file.Paths;
+import java.time.Duration;
+
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Level;
+import org.apache.log4j.LogManager;
+
+import com.bns.etbic.craft.as400.As400Driver;
+import com.bns.etbic.craft.as400.keys.Key;
+import com.bns.etbic.craft.as400.locators.By;
+import com.bns.etbic.craft.as400.waits.As400Conditions;
+import org.tn5250j.tools.logging.TN5250jLogFactory;
+import org.tn5250j.tools.logging.TN5250jLogger;
+
+/**
+ * Runnable smoke / quick-start showing the AS/400 façade.
+ *
+ * Headless (default): connects, snapshots the sign-on screen, saves a PNG, exits.
+ * Headed:             same, but opens an interactive tn5250j window and blocks
+ *                     until the user closes it so you can keep clicking/typing.
+ *
+ * Run:
+ *   java -cp out:lib/runtime/* com.bns.etbic.craft.as400.example.LoginExample
+ *   java -Dheaded=true -cp out:lib/runtime/* com.bns.etbic.craft.as400.example.LoginExample
+ */
+public final class LoginExample {
+
+    public static void main(String[] args) throws Exception {
+        BasicConfigurator.configure();
+        LogManager.getRootLogger().setLevel(Level.INFO);
+        TN5250jLogFactory.setLogLevels(TN5250jLogger.INFO);
+
+        String host = systemOr(args, 0, "host", "TBNSIMAGE.EBSS.BNS");
+        String device = systemOr(args, 1, "deviceName", "BNS31954");
+        boolean headed = Boolean.parseBoolean(System.getProperty("headed", "false"));
+
+        // Credenciales desde variables de entorno: `user` y `password`.
+        String user = requireEnv("user");
+        String password = requireEnv("password");
+
+        As400Driver driver = As400Driver.builder()
+            .host(host).port(23)
+            .codePage("37")
+            .deviceName(device)
+            .headless(!headed)
+            .defaultTimeout(Duration.ofSeconds(30))
+            .build();
+
+        try {
+            System.out.println("Connecting to " + host + " (device=" + device + ", headed=" + headed + ") ...");
+            driver.connect();
+
+            System.out.println("Waiting for sign-on screen to be ready ...");
+            driver.waitFor(As400Conditions.inputReady());
+
+            System.out.println("---- Sign-on screen ----");
+            for (String row : driver.getScreen().allRows()) {
+                System.out.println(row);
+            }
+
+            driver.screenshot(Paths.get("signon.png"));
+            System.out.println("Saved screenshot: signon.png");
+
+            try {
+                System.out.println("First input field: " + driver.findField(By.firstInputField()));
+            } catch (RuntimeException e) {
+                System.out.println("Could not locate first input field: " + e.getMessage());
+            }
+
+            System.out.println("Filling sign-on form ...");
+            driver.findField(By.labelLeftOf("User")).type(user);
+            driver.findField(By.labelLeftOf("Password")).type(password);
+            driver.press(Key.ENTER);
+
+            // Esperar el menú: retorna apenas aparece "Selection" (texto ausente en
+            // la pantalla de sign-on), sin espera ciega ni timeouts falsos.
+            driver.waitFor(As400Conditions.textPresent("Selection"));
+
+            System.out.println("---- Menu after sign-on ----");
+            for (String row : driver.getScreen().allRows()) {
+                System.out.println(row);
+            }
+            driver.screenshot(Paths.get("after-login.png"));
+            System.out.println("Saved screenshot: after-login.png");
+
+            // Seleccionar la opción 3 del menú (TCS - Session 3 ONLY).
+            // Si el campo no estuviera a la derecha del rótulo "Selection", el
+            // fallback es By.firstInputField() o driver.type("3").
+            System.out.println("Selecting option 3 ...");
+            driver.findField(By.labelLeftOf("Selection")).type("3");
+
+            // No sabemos qué texto trae la pantalla de TCS: pressAndWait envía ENTER
+            // y espera a que el host repinte de verdad y quede listo para entrada.
+            driver.pressAndWait(Key.ENTER);
+
+            System.out.println("---- Screen after option 3 ----");
+            for (String row : driver.getScreen().allRows()) {
+                System.out.println(row);
+            }
+            driver.screenshot(Paths.get("after-option3.png"));
+            System.out.println("Saved screenshot: after-option3.png");
+
+            // Keep the interactive window open until the user closes it.
+            // In headless mode this returns immediately.
+            if (headed) {
+                System.out.println("Headed window is open. Close it (X) to exit.");
+                driver.awaitHeadedWindowClose();
+            }
+        } finally {
+            driver.disconnect();
+        }
+        System.out.println("Done.");
+    }
+
+    private static String requireEnv(String name) {
+        String value = System.getenv(name);
+        if (value == null || value.isEmpty()) {
+            throw new IllegalStateException(
+                "Missing environment variable: " + name + " (set `user` and `password`)");
+        }
+        return value;
+    }
+
+    private static String systemOr(String[] args, int idx, String prop, String fallback) {
+        if (args != null && args.length > idx && args[idx] != null && !args[idx].isEmpty()) {
+            return args[idx];
+        }
+        String sys = System.getProperty(prop);
+        return (sys != null && !sys.isEmpty()) ? sys : fallback;
+    }
+}

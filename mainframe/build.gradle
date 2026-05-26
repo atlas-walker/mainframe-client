@@ -37,7 +37,7 @@ dependencies {
 
 application {
     // Clase de prueba que se corre con: ./gradlew run
-    mainClass = 'com.bns.etbic.craft.mainframe.example.LoginExample'
+    mainClass = 'com.bns.etbic.craft.as400.example.LoginExample'
 }
 
 // Permite pasar host/device/headed desde la línea de comandos, p.ej.:
@@ -69,7 +69,7 @@ test {
         }
     }
     // Y cualquier opción de Cucumber pasada por CLI, p.ej.:
-    //   ./gradlew test -Dcucumber.filter.tags="@mainframe and not @wip"
+    //   ./gradlew test -Dcucumber.filter.tags="@as400 and not @wip"
     System.properties.each { k, v ->
         if (k.toString().startsWith('cucumber.')) {
             systemProperty k.toString(), v

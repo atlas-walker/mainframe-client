@@ -1,4 +1,4 @@
-# `mainframe` — Selenium-style automation façade over tn5250j
+# `as400` — Selenium-style automation façade over tn5250j
 
 A small Java module that wraps [tn5250j](https://github.com/tn5250j/tn5250j) with a
 WebDriver-flavoured API for automating AS/400 / IBM i green screens.
@@ -7,12 +7,12 @@ WebDriver-flavoured API for automating AS/400 / IBM i green screens.
 
 ```java
 import java.time.Duration;
-import com.bns.etbic.craft.mainframe.MainframeDriver;
-import com.bns.etbic.craft.mainframe.keys.Key;
-import com.bns.etbic.craft.mainframe.locators.By;
-import com.bns.etbic.craft.mainframe.waits.MainframeConditions;
+import com.bns.etbic.craft.as400.As400Driver;
+import com.bns.etbic.craft.as400.keys.Key;
+import com.bns.etbic.craft.as400.locators.By;
+import com.bns.etbic.craft.as400.waits.As400Conditions;
 
-try (MainframeDriver driver = MainframeDriver.builder()
+try (As400Driver driver = As400Driver.builder()
         .host("as400.example.com").port(23)
         .codePage("37")
         .deviceName("WS00001")            // required — host disconnects without it
@@ -21,13 +21,13 @@ try (MainframeDriver driver = MainframeDriver.builder()
         .build()) {
 
     driver.connect();
-    driver.waitFor(MainframeConditions.inputReady());
+    driver.waitFor(As400Conditions.inputReady());
 
     driver.findField(By.labelLeftOf("User .:")).type("MYUSER");
     driver.findField(By.labelLeftOf("Password")).type("S3cret!");
     driver.press(Key.ENTER);
 
-    driver.waitFor(MainframeConditions.textPresent("Main Menu"));
+    driver.waitFor(As400Conditions.textPresent("Main Menu"));
     driver.screenshot(java.nio.file.Paths.get("after-login.png"));
 }
 ```
@@ -36,13 +36,13 @@ try (MainframeDriver driver = MainframeDriver.builder()
 
 | Concept | Class | Notes |
 |---|---|---|
-| Driver | `MainframeDriver` | Entry point. `AutoCloseable`. Build with `MainframeDriver.builder()`. |
-| Options | `MainframeOptions` | Immutable connection config. `deviceName` is required. |
+| Driver | `As400Driver` | Entry point. `AutoCloseable`. Build with `As400Driver.builder()`. |
+| Options | `As400Options` | Immutable connection config. `deviceName` is required. |
 | Snapshot | `elements.ScreenSnapshot` | Immutable view of text / color / cursor at a moment. |
-| Field | `elements.MainframeField` | Wraps `ScreenField`; `.type()`, `.clear()`, `.getText()`. |
+| Field | `elements.As400Field` | Wraps `ScreenField`; `.type()`, `.clear()`, `.getText()`. |
 | Locator | `locators.By` | `By.at(r,c)`, `By.labelLeftOf("User .:")`, `By.labelAbove(...)`, `By.fieldIndex(n)`, `By.containingText(...)`, `By.firstInputField()`. |
 | Key | `keys.Key` | `ENTER`, `PF1`..`PF24`, `CLEAR`, `RESET`, `SYSREQ`, `ATTN`, function/edit keys. |
-| Waits | `waits.MainframeConditions` | `inputReady()`, `textPresent(...)`, `cursorAt(r,c)`, `screenStable(Duration)`. |
+| Waits | `waits.As400Conditions` | `inputReady()`, `textPresent(...)`, `cursorAt(r,c)`, `screenStable(Duration)`. |
 | Screenshot | `screenshot.ScreenshotRenderer` | Renders snapshot to `BufferedImage` using the canonical 5250 palette. Headless-safe (no display required). |
 
 ## Coordinate convention
@@ -91,12 +91,12 @@ Platform:
 
 ```
 src/test/
-  java/com/bns/etbic/craft/mainframe/
-    pages/    Page Objects (SignOnPage, MainMenuPage, MainframeScreen)
+  java/com/bns/etbic/craft/as400/
+    pages/    Page Objects (SignOnPage, MainMenuPage, As400Screen)
     steps/    Step definitions
-    support/  Per-scenario session lifecycle + config (MainframeSession, Hooks, MainframeConfig)
-    runners/  JUnit Platform @Suite that filters the @mainframe tag
-  resources/com/bns/etbic/craft/mainframe/features/
+    support/  Per-scenario session lifecycle + config (As400Session, Hooks, As400Config)
+    runners/  JUnit Platform @Suite that filters the @as400 tag
+  resources/com/bns/etbic/craft/as400/features/
     *.feature
 ```
 
@@ -107,22 +107,22 @@ export password='MICLAVE'
 ./gradlew test
 
 # pick scenarios by tag from the CLI:
-./gradlew test -Dcucumber.filter.tags="@mainframe"
+./gradlew test -Dcucumber.filter.tags="@as400"
 ```
 
-The mainframe driver is **ephemeral and scenario-scoped**: `MainframeSession`
+The AS/400 driver is **ephemeral and scenario-scoped**: `As400Session`
 connects lazily the first time a step calls `session.driver()`, and `Hooks` closes
 it after every scenario. So a scenario that is mostly Playwright and only validates
-one thing on the mainframe connects just for that step; a scenario that never touches
-the mainframe never opens a connection; and an all-mainframe scenario reuses the one
+one thing on the AS/400 connects just for that step; a scenario that never touches
+the AS/400 never opens a connection; and an all-AS/400 scenario reuses the one
 session. The same DI pattern (PicoContainer) lets a Playwright session live alongside
 it in the same scenario.
 
 ## Moving this module into the craft framework
 
-The package is already `com.bns.etbic.craft.mainframe`, so promoting it is mostly a copy:
+The package is already `com.bns.etbic.craft.as400`, so promoting it is mostly a copy:
 
-1. Copy `src/main/java/com/bns/etbic/craft/mainframe/` into the craft source tree.
+1. Copy `src/main/java/com/bns/etbic/craft/as400/` into the craft source tree.
 2. Drop the `example/` package (it's only the local smoke test).
 3. Carry over `src/test/` (pages/steps/support/runners) as the BDD layer.
 4. Make sure craft has `com.github.vebqa:tn5250j:0.7.6.4` on its classpath.
