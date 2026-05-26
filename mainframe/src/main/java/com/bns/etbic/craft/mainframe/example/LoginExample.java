@@ -90,10 +90,10 @@ public final class LoginExample {
             // fallback es By.firstInputField() o driver.type("3").
             System.out.println("Selecting option 3 ...");
             driver.findField(By.labelLeftOf("Selection")).type("3");
-            driver.press(Key.ENTER);
 
-            // Esperar a que la pantalla de la opción 3 quede lista para entrada.
-            driver.waitFor(MainframeConditions.inputReady());
+            // No sabemos qué texto trae la pantalla de TCS: pressAndWait envía ENTER
+            // y espera a que el host repinte de verdad y quede listo para entrada.
+            driver.pressAndWait(Key.ENTER);
 
             System.out.println("---- Screen after option 3 ----");
             for (String row : driver.getScreen().allRows()) {

@@ -181,6 +181,47 @@ public final class MainframeDriver implements AutoCloseable {
         screen.sendKeys(sb.toString());
     }
 
+    /**
+     * Presiona una tecla y espera a que el HOST responda. Captura la pantalla
+     * actual, envía la tecla y bloquea hasta que el host repinta (un cambio de
+     * pantalla posterior al envío) y el teclado vuelve a quedar listo para entrada.
+     *
+     * <p>Es la espera correcta cuando NO sabes qué texto traerá la siguiente
+     * pantalla: a diferencia de {@code Thread.sleep} (que puede leer la pantalla
+     * vieja) o de {@code screenStable} (que puede declarar "estable" la pantalla
+     * previa si el host tarda), aquí se ancla al evento real de repintado.
+     *
+     * @return el snapshot de la pantalla ya repintada y lista.
+     */
+    public ScreenSnapshot pressAndWait(Key key) {
+        return pressAndWait(key, options.defaultTimeout());
+    }
+
+    public ScreenSnapshot pressAndWait(Key key, Duration timeout) {
+        ensureConnected();
+        long baseline = sync.lastChangeNanos();
+        press(key);
+
+        long deadline = System.nanoTime() + timeout.toNanos();
+        long lastSeen = baseline;
+        while (true) {
+            ScreenSnapshot snap = ScreenSnapshot.take(screen);
+            boolean hostResponded = sync.lastChangeNanos() > baseline;
+            if (hostResponded && snap.inputReady()) {
+                return snap;
+            }
+            long remaining = deadline - System.nanoTime();
+            if (remaining <= 0) {
+                throw new MainframeException(
+                    "Timed out after " + timeout.toMillis() + "ms waiting for the host to "
+                        + "respond after pressing " + key + ". Last screen:\n" + snap.allText());
+            }
+            long waitMs = Math.min(250, Math.max(20, remaining / 1_000_000L));
+            sync.awaitChangeSince(lastSeen, waitMs);
+            lastSeen = sync.lastChangeNanos();
+        }
+    }
+
     public <T> T waitFor(ExpectedCondition<T> condition) {
         return waitFor(condition, options.defaultTimeout());
     }
