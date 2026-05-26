@@ -84,10 +84,45 @@ The only declared dependency is the published fork
 `com.github.vebqa:tn5250j:0.7.6.4`, which pulls in `log4j`, `slf4j`, and `jt400`
 transitively — nothing else to wire up.
 
+## Tests (Cucumber + JUnit 5)
+
+BDD scenarios live in the standard Gradle `src/test` tree and run on the JUnit
+Platform:
+
+```
+src/test/
+  java/com/bns/etbic/craft/mainframe/
+    pages/    Page Objects (SignOnPage, MainMenuPage, MainframeScreen)
+    steps/    Step definitions
+    support/  Per-scenario session lifecycle + config (MainframeSession, Hooks, MainframeConfig)
+    runners/  JUnit Platform @Suite that filters the @mainframe tag
+  resources/com/bns/etbic/craft/mainframe/features/
+    *.feature
+```
+
+```bash
+# set credentials (read from the environment), then:
+export user='MIUSUARIO'
+export password='MICLAVE'
+./gradlew test
+
+# pick scenarios by tag from the CLI:
+./gradlew test -Dcucumber.filter.tags="@mainframe"
+```
+
+The mainframe driver is **ephemeral and scenario-scoped**: `MainframeSession`
+connects lazily the first time a step calls `session.driver()`, and `Hooks` closes
+it after every scenario. So a scenario that is mostly Playwright and only validates
+one thing on the mainframe connects just for that step; a scenario that never touches
+the mainframe never opens a connection; and an all-mainframe scenario reuses the one
+session. The same DI pattern (PicoContainer) lets a Playwright session live alongside
+it in the same scenario.
+
 ## Moving this module into the craft framework
 
 The package is already `com.bns.etbic.craft.mainframe`, so promoting it is mostly a copy:
 
 1. Copy `src/main/java/com/bns/etbic/craft/mainframe/` into the craft source tree.
 2. Drop the `example/` package (it's only the local smoke test).
-3. Make sure craft has `com.github.vebqa:tn5250j:0.7.6.4` on its classpath.
+3. Carry over `src/test/` (pages/steps/support/runners) as the BDD layer.
+4. Make sure craft has `com.github.vebqa:tn5250j:0.7.6.4` on its classpath.
