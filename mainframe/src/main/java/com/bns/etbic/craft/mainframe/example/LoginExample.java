@@ -74,15 +74,33 @@ public final class LoginExample {
             driver.findField(By.labelLeftOf("Password")).type(password);
             driver.press(Key.ENTER);
 
-            // Esperar a que el host repinte tras enviar las credenciales.
-            driver.waitFor(MainframeConditions.screenStable(Duration.ofSeconds(2)));
+            // Esperar el menú: retorna apenas aparece "Selection" (texto ausente en
+            // la pantalla de sign-on), sin espera ciega ni timeouts falsos.
+            driver.waitFor(MainframeConditions.textPresent("Selection"));
 
-            System.out.println("---- Screen after sign-on ----");
+            System.out.println("---- Menu after sign-on ----");
             for (String row : driver.getScreen().allRows()) {
                 System.out.println(row);
             }
             driver.screenshot(Paths.get("after-login.png"));
             System.out.println("Saved screenshot: after-login.png");
+
+            // Seleccionar la opción 3 del menú (TCS - Session 3 ONLY).
+            // Si el campo no estuviera a la derecha del rótulo "Selection", el
+            // fallback es By.firstInputField() o driver.type("3").
+            System.out.println("Selecting option 3 ...");
+            driver.findField(By.labelLeftOf("Selection")).type("3");
+            driver.press(Key.ENTER);
+
+            // Esperar a que la pantalla de la opción 3 quede lista para entrada.
+            driver.waitFor(MainframeConditions.inputReady());
+
+            System.out.println("---- Screen after option 3 ----");
+            for (String row : driver.getScreen().allRows()) {
+                System.out.println(row);
+            }
+            driver.screenshot(Paths.get("after-option3.png"));
+            System.out.println("Saved screenshot: after-option3.png");
 
             // Keep the interactive window open until the user closes it.
             // In headless mode this returns immediately.
