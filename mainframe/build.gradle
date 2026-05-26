@@ -1,6 +1,5 @@
 plugins {
     id 'java'
-    id 'application'
 }
 
 group = 'com.bns.etbic.craft'
@@ -19,7 +18,7 @@ repositories {
 
 dependencies {
     // Fork publicado del emulador. Arrastra log4j 1.2.17, slf4j y jt400 de forma
-    // transitiva, así que el example (org.apache.log4j.*) compila sin nada más.
+    // transitiva — el emulador y el driver logean con log4j 1.x.
     implementation 'com.github.vebqa:tn5250j:0.7.6.4'
 
     // --- Pruebas: Cucumber sobre JUnit 5 (JUnit Platform) ---
@@ -33,25 +32,6 @@ dependencies {
     testImplementation 'org.junit.platform:junit-platform-suite'  // runner @Suite
 
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-}
-
-application {
-    // Clase de prueba que se corre con: ./gradlew run
-    mainClass = 'com.bns.etbic.craft.as400.example.LoginExample'
-}
-
-// Permite pasar host/device/headed desde la línea de comandos, p.ej.:
-//   ./gradlew run -Dheaded=true -Dhost=MI.HOST -DdeviceName=WS00001
-// o por argumentos posicionales:
-//   ./gradlew run --args="MI.HOST WS00001"
-tasks.named('run', JavaExec) {
-    standardInput = System.in
-    ['headed', 'host', 'deviceName'].each { prop ->
-        def val = System.getProperty(prop)
-        if (val != null) {
-            systemProperty prop, val
-        }
-    }
 }
 
 test {

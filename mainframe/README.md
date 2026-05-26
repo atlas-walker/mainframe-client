@@ -59,30 +59,22 @@ Conversion to/from tn5250j's 0-based field coordinates happens internally.
 
 The AS/400 / IBM i Telnet server closes the session if no `SESSION_DEVICE_NAME` (a.k.a. WorkstationID) is supplied. The builder rejects missing/blank device names eagerly so you fail fast at construction time instead of after the host hangs up.
 
-## Build & run (Gradle)
+## Build (Gradle)
 
 This module is a self-contained Gradle project. You don't need Gradle installed —
 the wrapper downloads it on first run.
 
 ```bash
-# compile
+# compile main + test sources
 ./gradlew build
-
-# run the example (LoginExample)
-./gradlew run
-
-# override host / device / headed window:
-./gradlew run -Dhost=MI.HOST -DdeviceName=WS00001 -Dheaded=true
-# or positionally:
-./gradlew run --args="MI.HOST WS00001"
 ```
-
-The example connects, prints the sign-on screen, writes `signon.png`, and disconnects.
-You can also run/debug `LoginExample` directly from your IDE (import as a Gradle project).
 
 The only declared dependency is the published fork
 `com.github.vebqa:tn5250j:0.7.6.4`, which pulls in `log4j`, `slf4j`, and `jt400`
 transitively — nothing else to wire up.
+
+The driver is exercised through the BDD layer — see [Tests](#tests-cucumber--junit-5)
+below for how to run it against a live host.
 
 ## Tests (Cucumber + JUnit 5)
 
