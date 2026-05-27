@@ -20,14 +20,15 @@ When asked to review a PR or branch changes:
 3. Run `git --no-pager diff master...HEAD` to get the full diff
 4. Run `git --no-pager log master..HEAD --oneline` to get the commit history
 5. Analyze every modified file against ALL convention sections in this document
-6. Generate the report as a `.md` file in the project root
+6. Generate the report as an `.html` file in the `reports/pr/` directory
+7. Open the report in the default browser with `open` (or `xdg-open` on Linux)
 
 If the user specifies a different branch, use it instead of HEAD.
 If the user specifies a different base branch, use it instead of master.
 
 **CRITICAL:** ALL git commands MUST use `--no-pager` to prevent the terminal from opening an interactive pager (like `less` or `vim`) that blocks execution. Never run a git command without `--no-pager` when reading output.
 
-**CRITICAL:** This skill ONLY generates a report. It MUST NEVER modify files in `src/` or any other project directory. The only output is a `.md` file with the findings.
+**CRITICAL:** This skill ONLY generates a report. It MUST NEVER modify files in `src/` or any other project directory. The only output is an `.html` file with the findings.
 
 ---
 
@@ -319,19 +320,19 @@ Valid types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `style`, `perf`
 
 ## Report Format
 
-The report must be generated as an **HTML file** in the `report/pr/` directory with the name:
+The report must be generated as an **HTML file** in the `reports/pr/` directory with the name:
 `review-{branch-name}.html`
 
-For example, for the branch `feature/login-automation`: `report/pr/review-feature-login-automation.html`
+For example, for the branch `feature/login-automation`: `reports/pr/review-feature-login-automation.html`
 
-If the `report/pr/` directory does not exist, create it before writing the file:
+If the `reports/pr/` directory does not exist, create it before writing the file:
 ```bash
-mkdir -p report/pr
+mkdir -p reports/pr
 ```
 
 After generating the report, **always open it automatically** in the default browser:
 ```bash
-open report/pr/review-{branch-name}.html
+open reports/pr/review-{branch-name}.html
 ```
 On Linux use `xdg-open` instead of `open`.
 
