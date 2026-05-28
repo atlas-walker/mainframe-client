@@ -13,7 +13,7 @@ tools:
 
 ## Review Workflow
 
-When asked to review a PR or branch changes, follow these steps **in strict order**. Do NOT skip any step. Do NOT generate the report until ALL files have been individually analyzed.
+When asked to review a PR or branch changes, follow these steps **in strict order**. Do NOT skip any step.
 
 ### Step 1 — Identify branches
 
@@ -22,33 +22,85 @@ Determine the source and target branches from the user's prompt.
 - If the user says "review this branch" → source=`HEAD`, target=`master`
 - If the user specifies different branches, use those
 
-### Step 2 — List modified files
+### Step 2 — Initialize findings file
+
+Create a temporary file to record ALL findings as you discover them. This prevents losing findings during analysis. Also capture the exact timestamp for the report.
+
+```bash
+mkdir -p reports/pr
+echo "" > reports/pr/_findings.tmp
+echo "TIMESTAMP|$(date '+%Y-%m-%d %H:%M:%S %Z')" >> reports/pr/_findings.tmp
+```
+
+### Step 3 — List modified files
 
 ```bash
 git --no-pager diff {target}...{source} --name-only
 ```
 
-Save this list. Every file listed MUST be analyzed individually in step 4.
+Save this list. Every file listed MUST be analyzed individually in step 5.
 
-### Step 3 — Get commit history
+### Step 4 — Analyze commits
+
+First, get the total commit count:
+
+```bash
+git --no-pager log {target}..{source} --oneline | wc -l
+```
+
+Save this number as TOTAL_COMMITS. Then get the full list:
 
 ```bash
 git --no-pager log {target}..{source} --oneline
 ```
 
-Evaluate each commit message against section 7 (Commit Conventions).
+For EACH commit in the output, evaluate the message against section 7 (Commit Conventions). **Immediately** append each finding to the findings file:
 
-### Step 4 — Analyze EACH file individually (MANDATORY)
+```bash
+echo "COMMIT|{severity}|{short-hash}|{commit message}|{issue description}" >> reports/pr/_findings.tmp
+```
 
-For EVERY file from step 2, run:
+Use severity `BLOCKING` or `WARNING`. If the commit is compliant, write:
+
+```bash
+echo "COMMIT|OK|{short-hash}|{commit message}|Compliant" >> reports/pr/_findings.tmp
+```
+
+After processing all commits, verify the count:
+
+```bash
+grep -c "^COMMIT|" reports/pr/_findings.tmp
+```
+
+**This number MUST equal TOTAL_COMMITS.** If it does not, you missed commits. Go back and find which ones are missing by comparing the git log output with the COMMIT lines in the findings file. Do NOT proceed until the counts match.
+
+### Step 5 — Analyze EACH file individually (MANDATORY)
+
+For EVERY file from step 3, one at a time:
+
+**5a.** Get the diff for that single file:
 
 ```bash
 git --no-pager diff {target}...{source} -- {filepath}
 ```
 
-Then apply the checklist below based on file type. You MUST check EVERY rule in the applicable checklist. Do not assume the code is correct — verify it.
+**5b.** Read the diff output carefully. Apply the checklist below based on file type. You MUST check EVERY rule. Do not assume the code is correct — verify it against the actual diff output.
 
-#### If the file is a `.feature` file:
+**5c.** For EACH violation found, **immediately** append it to the findings file:
+
+```bash
+echo "FILE|{severity}|{filepath}|{line}|{rule title}|{what is wrong}|{why it matters}|{how to improve}" >> reports/pr/_findings.tmp
+```
+
+**5d.** If the file has positive aspects worth mentioning:
+
+```bash
+echo "GOOD|{filepath}|{positive aspect}" >> reports/pr/_findings.tmp
+```
+
+**Do NOT move to the next file until you have checked ALL applicable rules on the current file and written all findings to the temp file.**
+
+#### Checklist for `.feature` files:
 - [ ] Does it use `Background`? → BLOCKING
 - [ ] Is the first step `Given I successfully load the case data "CASE-ID-XXX"`? If not → BLOCKING
 - [ ] Do any steps reference UI elements (click, type, select, field, button)? → BLOCKING
@@ -56,11 +108,11 @@ Then apply the checklist below based on file type. You MUST check EVERY rule in 
 - [ ] Are there more than 10 steps per scenario? → WARNING
 - [ ] Are scenario names descriptive? → WARNING
 
-#### If the file is in `step_definitions/`:
+#### Checklist for files in `step_definitions/`:
 - [ ] Does it contain ANY code beyond method calls to page objects? (assertions, driver calls, try-catch, conditionals, variable manipulation) → BLOCKING
 - [ ] Does it instantiate objects other than page objects? → BLOCKING
 
-#### If the file is in `page_objects/`:
+#### Checklist for files in `page_objects/`:
 - [ ] Does every public method (called from steps) have a try-catch with `Exception | AssertionError`? → BLOCKING
 - [ ] Does the catch call `reporter.caseFailed()`? → BLOCKING
 - [ ] Does ANY helper/private method call `reporter.caseFailed()`? → BLOCKING (should use `Reporter.addErrorLog` + re-throw)
@@ -71,7 +123,7 @@ Then apply the checklist below based on file type. You MUST check EVERY rule in 
 - [ ] Are constants in SNAKE_CASE? → WARNING
 - [ ] Is there proper documentation on public methods? → WARNING
 
-#### For ALL `.java` files:
+#### Checklist for ALL `.java` files:
 - [ ] Is modern Java 21+ syntax used? (pattern matching, text blocks, records, switch expressions) → BLOCKING if legacy syntax is used where modern alternative exists
 - [ ] Is injection by constructor? (not `@Autowired` on fields) → BLOCKING
 - [ ] Are there hardcoded credentials or secrets? → BLOCKING
@@ -80,17 +132,58 @@ Then apply the checklist below based on file type. You MUST check EVERY rule in 
 - [ ] Is there commented-out code? → WARNING
 - [ ] Are there `TODO`/`FIXME` without tickets? → WARNING
 
-**IMPORTANT:** If a checklist item is violated, record the file, approximate line number, the rule violated, and a concrete suggestion. If a checklist item passes, move on. Do NOT skip checklist items.
+### Step 6 — Verify findings completeness (MANDATORY — DO NOT SKIP)
 
-### Step 5 — Generate the HTML report
+Before generating the report, run these verifications:
 
-Only AFTER completing step 4 for ALL files, generate the report at:
+**6a. Verify all commits are accounted for:**
+
 ```bash
-mkdir -p reports/pr
+echo "=== COMMIT VERIFICATION ==="
+echo "Expected commits:"
+git --no-pager log {target}..{source} --oneline | wc -l
+echo "Reviewed commits:"
+grep -c "^COMMIT|" reports/pr/_findings.tmp
 ```
-Write the file to `reports/pr/review-{branch-name}.html`
 
-### Step 6 — Open the report
+If these two numbers do not match, identify the missing commits and go back to step 4 to analyze them.
+
+**6b. Verify all files are accounted for:**
+
+```bash
+echo "=== FILE VERIFICATION ==="
+echo "Expected files:"
+git --no-pager diff {target}...{source} --name-only | wc -l
+echo "Reviewed files (findings + good):"
+grep -c "^FILE\|^GOOD" reports/pr/_findings.tmp
+```
+
+If the reviewed count is less than the expected count, identify the missing files and go back to step 5 to analyze them.
+
+**6c. Display full findings for report generation:**
+
+```bash
+cat reports/pr/_findings.tmp
+```
+
+**DO NOT proceed to step 7 until 6a and 6b counts match.** This is non-negotiable.
+
+### Step 7 — Generate the HTML report
+
+Read the findings file and use its contents to build the HTML report. The report MUST reflect exactly what is in the findings file — do not add, remove, or modify findings.
+
+- Use the `TIMESTAMP` line from the findings file as the `{timestamp}` value in the report
+- The `{commit-count}` must match the total COMMIT lines in the findings file
+- The `{file-count}` must match the total unique files in FILE and GOOD lines
+
+Write the report to `reports/pr/review-{branch-name}.html`
+
+Then clean up:
+```bash
+rm reports/pr/_findings.tmp
+```
+
+### Step 8 — Open the report
 
 ```bash
 open reports/pr/review-{branch-name}.html
@@ -426,8 +519,8 @@ Apply these color rules for the verdict banner:
 - **Comment** → yellow/amber (`#d97706`)
 
 Each finding row in the table must have a severity badge:
-- 🚫 Blocking → red badge
-- ⚠️ Warning → amber badge
+- Blocking → red badge
+- Warning → amber badge
 
 ```html
 <!DOCTYPE html>
@@ -492,7 +585,7 @@ Each finding row in the table must have a severity badge:
 <body>
   <div class="container">
     <h1>Code Review: {branch-name}</h1>
-    <p class="meta">Date: {date} &bull; Files reviewed: {file-count} &bull; Commits: {commit-count}</p>
+    <p class="meta">Date: {date} &bull; Generated at: {timestamp} &bull; Files reviewed: {file-count} &bull; Commits: {commit-count}</p>
 
     <!-- VERDICT BANNER: use verdict-approve, verdict-changes, or verdict-comment -->
     <div class="verdict {verdict-class}">
