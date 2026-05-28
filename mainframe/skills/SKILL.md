@@ -13,18 +13,89 @@ tools:
 
 ## Review Workflow
 
-When asked to review a PR or branch changes:
+When asked to review a PR or branch changes, follow these steps **in strict order**. Do NOT skip any step. Do NOT generate the report until ALL files have been individually analyzed.
 
-1. Run `git rev-parse --abbrev-ref HEAD` to get the current branch name
-2. Run `git --no-pager diff master...HEAD --name-only` to list modified files
-3. Run `git --no-pager diff master...HEAD` to get the full diff
-4. Run `git --no-pager log master..HEAD --oneline` to get the commit history
-5. Analyze every modified file against ALL convention sections in this document
-6. Generate the report as an `.html` file in the `reports/pr/` directory
-7. Open the report in the default browser with `open` (or `xdg-open` on Linux)
+### Step 1 — Identify branches
 
-If the user specifies a different branch, use it instead of HEAD.
-If the user specifies a different base branch, use it instead of master.
+Determine the source and target branches from the user's prompt.
+- If the user says "review dev against master" → source=`dev`, target=`master`
+- If the user says "review this branch" → source=`HEAD`, target=`master`
+- If the user specifies different branches, use those
+
+### Step 2 — List modified files
+
+```bash
+git --no-pager diff {target}...{source} --name-only
+```
+
+Save this list. Every file listed MUST be analyzed individually in step 4.
+
+### Step 3 — Get commit history
+
+```bash
+git --no-pager log {target}..{source} --oneline
+```
+
+Evaluate each commit message against section 7 (Commit Conventions).
+
+### Step 4 — Analyze EACH file individually (MANDATORY)
+
+For EVERY file from step 2, run:
+
+```bash
+git --no-pager diff {target}...{source} -- {filepath}
+```
+
+Then apply the checklist below based on file type. You MUST check EVERY rule in the applicable checklist. Do not assume the code is correct — verify it.
+
+#### If the file is a `.feature` file:
+- [ ] Does it use `Background`? → BLOCKING
+- [ ] Is the first step `Given I successfully load the case data "CASE-ID-XXX"`? If not → BLOCKING
+- [ ] Do any steps reference UI elements (click, type, select, field, button)? → BLOCKING
+- [ ] Is there dependency between scenarios? → BLOCKING
+- [ ] Are there more than 10 steps per scenario? → WARNING
+- [ ] Are scenario names descriptive? → WARNING
+
+#### If the file is in `step_definitions/`:
+- [ ] Does it contain ANY code beyond method calls to page objects? (assertions, driver calls, try-catch, conditionals, variable manipulation) → BLOCKING
+- [ ] Does it instantiate objects other than page objects? → BLOCKING
+
+#### If the file is in `page_objects/`:
+- [ ] Does every public method (called from steps) have a try-catch with `Exception | AssertionError`? → BLOCKING
+- [ ] Does the catch call `reporter.caseFailed()`? → BLOCKING
+- [ ] Does ANY helper/private method call `reporter.caseFailed()`? → BLOCKING (should use `Reporter.addErrorLog` + re-throw)
+- [ ] Is there redundancy between `reporter.addReportEvent()` and `reporter.casePassed()`? → BLOCKING
+- [ ] Does the method name match its behavior? (e.g., `verify*` without assertions) → BLOCKING
+- [ ] Are locators fragile? (index-based, absolute XPath, position-dependent) → BLOCKING
+- [ ] Are methods longer than 30 lines? → WARNING
+- [ ] Are constants in SNAKE_CASE? → WARNING
+- [ ] Is there proper documentation on public methods? → WARNING
+
+#### For ALL `.java` files:
+- [ ] Is modern Java 21+ syntax used? (pattern matching, text blocks, records, switch expressions) → BLOCKING if legacy syntax is used where modern alternative exists
+- [ ] Is injection by constructor? (not `@Autowired` on fields) → BLOCKING
+- [ ] Are there hardcoded credentials or secrets? → BLOCKING
+- [ ] Does the code follow SOLID principles? → BLOCKING for clear violations
+- [ ] Are there magic numbers without constants? → WARNING
+- [ ] Is there commented-out code? → WARNING
+- [ ] Are there `TODO`/`FIXME` without tickets? → WARNING
+
+**IMPORTANT:** If a checklist item is violated, record the file, approximate line number, the rule violated, and a concrete suggestion. If a checklist item passes, move on. Do NOT skip checklist items.
+
+### Step 5 — Generate the HTML report
+
+Only AFTER completing step 4 for ALL files, generate the report at:
+```bash
+mkdir -p reports/pr
+```
+Write the file to `reports/pr/review-{branch-name}.html`
+
+### Step 6 — Open the report
+
+```bash
+open reports/pr/review-{branch-name}.html
+```
+On Linux use `xdg-open` instead of `open`.
 
 **CRITICAL:** ALL git commands MUST use `--no-pager` to prevent the terminal from opening an interactive pager (like `less` or `vim`) that blocks execution. Never run a git command without `--no-pager` when reading output.
 
