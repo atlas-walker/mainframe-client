@@ -4,13 +4,23 @@ import com.bns.etbic.craft.as400.BasePage;
 import com.bns.etbic.craft.as400.keys.Key;
 import com.bns.etbic.craft.as400.locators.By;
 
-/** Menú NSLC: se elige una opción escribiéndola en el campo Selection. */
+/**
+ * Page Object for the NSLC main menu, where an option is chosen by typing it into
+ * the {@code Selection} field.
+ *
+ * @author Andres Acosta
+ * @since 0.1.0
+ */
 public final class MainMenuPage extends BasePage {
 
     /**
-     * Escribe la opción en el campo Selection y envía. Usa pressAndWait porque no
-     * sabemos qué pantalla traerá la opción: espera a que el host repinte de verdad.
-     * La aserción del resultado se hace luego sobre la pantalla viva (contains/text).
+     * Types the option into the {@code Selection} field and submits.
+     *
+     * <p>Uses {@code pressAndWait} because the destination screen is unknown: it
+     * blocks until the host actually repaints. The outcome is then asserted against
+     * the live screen via {@link #contains(String)} / {@link #text()}.
+     *
+     * @param option the menu option to select
      */
     public void selectOption(String option) {
         as400.findField(By.labelLeftOf("Selection")).type(option);

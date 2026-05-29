@@ -5,9 +5,22 @@ import java.time.Duration;
 import org.tn5250j.TN5250jConstants;
 
 /**
- * Punto único de creación y cierre de lo relacionado al AS/400. Mantiene un
- * driver compartido (se crea y conecta la primera vez que se pide) y sabe leer
- * la configuración desde propiedades {@code -Das400.*}.
+ * Single entry point for creating, sharing and tearing down everything related to
+ * an AS/400 (IBM i) session.
+ *
+ * <p>The factory keeps one shared {@link As400Driver} that is created and connected
+ * lazily on the first call to {@link #getDriver()} and reused afterwards. This lets
+ * Page Objects (see {@link BasePage}) obtain the live driver without threading it
+ * through constructors, and lets test glue close it with a single call.
+ *
+ * <p>Configuration is resolved from {@code -Das400.*} system properties through
+ * {@link #config()}; for example {@code -Das400.host=...} and {@code -Das400.user=...}.
+ *
+ * <p>All mutating operations are synchronized, so the shared driver is created at
+ * most once even under concurrent access.
+ *
+ * @author Andres Acosta
+ * @since 0.1.0
  */
 public final class As400Factory {
 
@@ -17,8 +30,10 @@ public final class As400Factory {
     private As400Factory() {}
 
     /**
-     * Arma un {@link As400Config} nuevo en cada llamada leyendo {@code -Das400.*}
-     * (con valores por defecto).
+     * Builds a fresh {@link As400Config} on every call by reading {@code -Das400.*}
+     * system properties, each with a default applied when the property is absent.
+     *
+     * @return a new configuration reflecting the current system properties
      */
     public static As400Config config() {
         return new As400Config(
@@ -36,7 +51,11 @@ public final class As400Factory {
             prop("password", ""));
     }
 
-    /** Driver compartido: lo crea y conecta la primera vez. */
+    /**
+     * Returns the shared driver, creating and connecting it on first use.
+     *
+     * @return the connected, shared {@link As400Driver}
+     */
     public static synchronized As400Driver getDriver() {
         if (driver == null) {
             config = config();
@@ -46,12 +65,20 @@ public final class As400Factory {
         return driver;
     }
 
-    /** La config con la que se creó el driver actual (o una recién leída si no hay driver). */
+    /**
+     * Returns the configuration the current shared driver was created with, or a
+     * freshly read configuration when no driver is open yet.
+     *
+     * @return the active configuration, never {@code null}
+     */
     public static synchronized As400Config currentConfig() {
         return config != null ? config : config();
     }
 
-    /** Cierra el driver y limpia el estado compartido. Seguro de llamar sin driver abierto. */
+    /**
+     * Disconnects the shared driver and clears the shared state. Safe to call when
+     * no driver has been opened (no-op in that case).
+     */
     public static synchronized void close() {
         if (driver != null) {
             driver.disconnect();
@@ -60,6 +87,13 @@ public final class As400Factory {
         config = null;
     }
 
+    /**
+     * Reads the {@code as400.<name>} system property.
+     *
+     * @param name the property name without the {@code as400.} prefix
+     * @param def  the value returned when the property is not set
+     * @return the property value, or {@code def} when absent
+     */
     private static String prop(String name, String def) {
         return System.getProperty("as400." + name, def);
     }

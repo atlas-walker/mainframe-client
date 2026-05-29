@@ -27,6 +27,24 @@ import com.bns.etbic.craft.as400.transport.SessionFactory;
 import com.bns.etbic.craft.as400.ui.HeadedWindow;
 import com.bns.etbic.craft.as400.waits.ExpectedCondition;
 
+/**
+ * Live handle to an AS/400 (IBM i) 5250 session.
+ *
+ * <p>The driver owns the connection to the host and is the single object through
+ * which callers send input ({@link #type}, {@link #press}), locate fields and text
+ * ({@link #find}), wait for host responses ({@link #waitFor}, {@link #pressAndWait})
+ * and capture the screen ({@link #getScreen}, {@link #screenshot}). It is mutable
+ * and always reflects what the host is currently showing.
+ *
+ * <p>Configuration is supplied as an immutable {@link As400Config}. Most callers do
+ * not instantiate the driver directly; they obtain the shared instance from
+ * {@link As400Factory#getDriver()}.
+ *
+ * <p>Instances are {@link AutoCloseable}; {@link #close()} disconnects the session.
+ *
+ * @author Andres Acosta
+ * @since 0.1.0
+ */
 public final class As400Driver implements AutoCloseable {
 
     private final As400Config config;
@@ -38,10 +56,23 @@ public final class As400Driver implements AutoCloseable {
     private HeadedWindow headed;
     private boolean connected;
 
+    /**
+     * Creates a driver with the given configuration and a default screenshot
+     * renderer. The connection is not opened until {@link #connect()} is called.
+     *
+     * @param config the connection configuration
+     */
     public As400Driver(As400Config config) {
         this(config, new ScreenshotRenderer());
     }
 
+    /**
+     * Creates a driver with the given configuration and a custom screenshot
+     * renderer. The connection is not opened until {@link #connect()} is called.
+     *
+     * @param config   the connection configuration
+     * @param renderer the renderer used to turn screens into images
+     */
     public As400Driver(As400Config config, ScreenshotRenderer renderer) {
         this.config = config;
         this.renderer = renderer;

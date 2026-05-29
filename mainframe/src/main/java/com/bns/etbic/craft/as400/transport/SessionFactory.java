@@ -8,10 +8,24 @@ import org.tn5250j.framework.common.SessionManager;
 import com.bns.etbic.craft.as400.As400Config;
 import com.bns.etbic.craft.as400.As400Exception;
 
+/**
+ * Translates an {@link As400Config} into the {@link java.util.Properties} expected
+ * by the underlying tn5250j emulator and opens a {@link Session5250}.
+ *
+ * @author Andres Acosta
+ * @since 0.1.0
+ */
 public final class SessionFactory {
 
     private SessionFactory() {}
 
+    /**
+     * Opens a 5250 session for the given configuration.
+     *
+     * @param opts the connection configuration
+     * @return an unconnected {@link Session5250}; the caller invokes {@code connect()}
+     * @throws As400Exception if the emulator fails to open the session
+     */
     public static Session5250 open(As400Config opts) {
         Properties p = new Properties();
         p.put(TN5250jConstants.SESSION_HOST,        opts.host());

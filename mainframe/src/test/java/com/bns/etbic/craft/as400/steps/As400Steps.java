@@ -9,6 +9,16 @@ import com.bns.etbic.craft.as400.pages.SignOnPage;
 
 import io.cucumber.java8.En;
 
+/**
+ * Cucumber step definitions for the AS/400 scenarios, written in the Java 8 lambda
+ * style ({@link io.cucumber.java8.En}).
+ *
+ * <p>Each step builds the Page Object it needs and drives it; assertions read the
+ * live screen through the page's query methods.
+ *
+ * @author Andres Acosta
+ * @since 0.1.0
+ */
 public class As400Steps implements En {
 
     public As400Steps() {
@@ -26,7 +36,7 @@ public class As400Steps implements En {
             MainMenuPage menu = new MainMenuPage();
             assertTrue(
                 menu.contains(expected),
-                () -> "No se encontró la advertencia \"" + expected + "\". Pantalla:\n" + menu.text());
+                () -> "Warning \"" + expected + "\" not found. Screen:\n" + menu.text());
         });
     }
 }
