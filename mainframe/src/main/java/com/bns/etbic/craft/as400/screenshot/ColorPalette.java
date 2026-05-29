@@ -8,7 +8,7 @@ import org.tn5250j.TN5250jConstants;
  * Maps 5250 color attribute bytes to AWT {@link Color}s for screenshot rendering.
  *
  * @author Andres Acosta
- * @since 0.1.0
+ * @since 1.0.14
  */
 public final class ColorPalette {
 

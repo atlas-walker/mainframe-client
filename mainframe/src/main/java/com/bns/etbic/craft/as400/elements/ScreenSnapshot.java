@@ -13,7 +13,7 @@ import org.tn5250j.framework.tn5250.ScreenOIA;
  * driver does this internally for {@code getScreen()} and the wait loops).
  *
  * @author Andres Acosta
- * @since 0.1.0
+ * @since 1.0.14
  */
 public final class ScreenSnapshot {
 

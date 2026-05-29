@@ -9,7 +9,7 @@ import com.bns.etbic.craft.as400.elements.ScreenSnapshot;
  * snapshot of it, and the actions a located field can perform. Supplied by the driver.
  *
  * @author Andres Acosta
- * @since 0.1.0
+ * @since 1.0.14
  */
 public interface LocatorContext {
 

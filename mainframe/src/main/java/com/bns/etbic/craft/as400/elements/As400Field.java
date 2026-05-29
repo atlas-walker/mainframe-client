@@ -8,7 +8,7 @@ import org.tn5250j.framework.tn5250.ScreenField;
  * into or clear it through a {@link FieldActions} supplied by the driver.
  *
  * @author Andres Acosta
- * @since 0.1.0
+ * @since 1.0.14
  */
 public final class As400Field {
 

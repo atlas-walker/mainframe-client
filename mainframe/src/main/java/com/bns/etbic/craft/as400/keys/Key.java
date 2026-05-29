@@ -7,7 +7,7 @@ import org.tn5250j.keyboard.KeyMnemonic;
  * each mapped to its tn5250j {@link KeyMnemonic}.
  *
  * @author Andres Acosta
- * @since 0.1.0
+ * @since 1.0.14
  */
 public enum Key {
 

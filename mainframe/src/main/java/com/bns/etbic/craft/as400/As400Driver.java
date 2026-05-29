@@ -43,7 +43,7 @@ import com.bns.etbic.craft.as400.waits.ExpectedCondition;
  * <p>Instances are {@link AutoCloseable}; {@link #close()} disconnects the session.
  *
  * @author Andres Acosta
- * @since 0.1.0
+ * @since 1.0.14
  */
 public final class As400Driver implements AutoCloseable {
 

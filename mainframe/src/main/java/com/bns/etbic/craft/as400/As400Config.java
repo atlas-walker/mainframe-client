@@ -31,7 +31,7 @@ import org.tn5250j.TN5250jConstants;
  * @param password       password for {@code user} (may be empty if signed on elsewhere)
  *
  * @author Andres Acosta
- * @since 0.1.0
+ * @since 1.0.14
  */
 public record As400Config(
         String host,
@@ -52,7 +52,7 @@ public record As400Config(
      * the {@link TN5250jConstants} token expected by the underlying emulator.
      *
      * @author Andres Acosta
-     * @since 0.1.0
+     * @since 1.0.14
      */
     public enum ScreenSize {
 

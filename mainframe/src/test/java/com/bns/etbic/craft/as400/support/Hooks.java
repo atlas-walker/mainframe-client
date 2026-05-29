@@ -12,7 +12,7 @@ import io.cucumber.java8.En;
  * the shared driver ephemeral: it never outlives a single scenario.
  *
  * @author Andres Acosta
- * @since 0.1.0
+ * @since 1.0.14
  */
 public class Hooks implements En {
 

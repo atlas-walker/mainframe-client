@@ -4,7 +4,7 @@ package com.bns.etbic.craft.as400.screenshot;
  * Image formats supported when writing a screenshot to disk.
  *
  * @author Andres Acosta
- * @since 0.1.0
+ * @since 1.0.14
  */
 public enum ScreenshotFormat {
 

@@ -5,7 +5,7 @@ package com.bns.etbic.craft.as400.elements;
  * supplies the implementation, keeping fields decoupled from the emulator API.
  *
  * @author Andres Acosta
- * @since 0.1.0
+ * @since 1.0.14
  */
 public interface FieldActions {
 

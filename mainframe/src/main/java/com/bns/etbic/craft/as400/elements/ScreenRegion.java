@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
  * held when captured. Returned by text locators and used for assertions.
  *
  * @author Andres Acosta
- * @since 0.1.0
+ * @since 1.0.14
  */
 public final class ScreenRegion {
 

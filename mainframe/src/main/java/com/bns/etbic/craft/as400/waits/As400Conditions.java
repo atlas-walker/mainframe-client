@@ -11,7 +11,7 @@ import com.bns.etbic.craft.as400.elements.ScreenSnapshot;
  * position, screen stability).
  *
  * @author Andres Acosta
- * @since 0.1.0
+ * @since 1.0.14
  */
 public final class As400Conditions {
 

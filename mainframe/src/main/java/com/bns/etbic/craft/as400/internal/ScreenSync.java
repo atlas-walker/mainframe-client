@@ -14,7 +14,7 @@ import org.tn5250j.framework.tn5250.Screen5250;
  * it is not part of the public API.
  *
  * @author Andres Acosta
- * @since 0.1.0
+ * @since 1.0.14
  */
 public final class ScreenSync implements ScreenListener {
 

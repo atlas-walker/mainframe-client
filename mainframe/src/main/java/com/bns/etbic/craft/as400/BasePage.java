@@ -13,7 +13,7 @@ package com.bns.etbic.craft.as400;
  * assert the result of an action.
  *
  * @author Andres Acosta
- * @since 0.1.0
+ * @since 1.0.14
  */
 public abstract class BasePage {
 

@@ -20,7 +20,7 @@ import org.tn5250j.TN5250jConstants;
  * most once even under concurrent access.
  *
  * @author Andres Acosta
- * @since 0.1.0
+ * @since 1.0.14
  */
 public final class As400Factory {
 

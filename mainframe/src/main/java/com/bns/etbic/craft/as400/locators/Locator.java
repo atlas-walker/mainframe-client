@@ -10,7 +10,7 @@ import java.util.List;
  * @param <T> the type of element this locator resolves
  *
  * @author Andres Acosta
- * @since 0.1.0
+ * @since 1.0.14
  */
 public interface Locator<T> {
 
