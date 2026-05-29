@@ -8,13 +8,9 @@ import com.bns.etbic.craft.as400.waits.As400Conditions;
 /** Pantalla de sign-on (User / Password). */
 public final class SignOnPage extends BasePage {
 
-    public SignOnPage waitUntilReady() {
-        as400.waitFor(As400Conditions.inputReady());
-        return this;
-    }
-
-    /** Escribe credenciales, envía y espera el menú. */
+    /** Espera el sign-on, escribe credenciales, envía y devuelve el menú ya cargado. */
     public MainMenuPage signOn(String user, String password) {
+        as400.waitFor(As400Conditions.inputReady());
         as400.findField(By.labelLeftOf("User")).type(user);
         as400.findField(By.labelLeftOf("Password")).type(password);
         as400.press(Key.ENTER);

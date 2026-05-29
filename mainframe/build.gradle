@@ -25,7 +25,7 @@ dependencies {
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation platform('io.cucumber:cucumber-bom:7.20.1')
 
-    testImplementation 'io.cucumber:cucumber-java'
+    testImplementation 'io.cucumber:cucumber-java8'               // steps en estilo lambda
     testImplementation 'io.cucumber:cucumber-junit-platform-engine'
     testImplementation 'io.cucumber:cucumber-picocontainer'       // DI por escenario
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -41,18 +41,14 @@ test {
         // los escenarios dos veces.
         includeEngines 'junit-platform-suite', 'junit-jupiter'
     }
-    // Reenvía host/device/headed a la JVM de pruebas. Las credenciales `user` y
-    // `password` se leen del entorno, que el worker de Gradle hereda.
-    ['host', 'deviceName', 'headed'].each { p ->
-        if (System.getProperty(p) != null) {
-            systemProperty p, System.getProperty(p)
-        }
-    }
-    // Y cualquier opción de Cucumber pasada por CLI, p.ej.:
-    //   ./gradlew test -Dcucumber.filter.tags="@as400 and not @wip"
+    // Reenvía al worker de pruebas las propiedades -Das400.* (host, deviceName,
+    // user, password, etc., que lee As400Factory) y cualquier opción de Cucumber
+    // pasada por CLI, p.ej.:
+    //   ./gradlew test -Das400.user=FOO -Dcucumber.filter.tags="@as400 and not @wip"
     System.properties.each { k, v ->
-        if (k.toString().startsWith('cucumber.')) {
-            systemProperty k.toString(), v
+        def key = k.toString()
+        if (key.startsWith('as400.') || key.startsWith('cucumber.')) {
+            systemProperty key, v
         }
     }
     testLogging {
