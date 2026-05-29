@@ -5,14 +5,14 @@ import java.util.Properties;
 import org.tn5250j.Session5250;
 import org.tn5250j.TN5250jConstants;
 import org.tn5250j.framework.common.SessionManager;
+import com.bns.etbic.craft.as400.As400Config;
 import com.bns.etbic.craft.as400.As400Exception;
-import com.bns.etbic.craft.as400.As400Options;
 
 public final class SessionFactory {
 
     private SessionFactory() {}
 
-    public static Session5250 open(As400Options opts) {
+    public static Session5250 open(As400Config opts) {
         Properties p = new Properties();
         p.put(TN5250jConstants.SESSION_HOST,        opts.host());
         p.put(TN5250jConstants.SESSION_HOST_PORT,   String.valueOf(opts.port()));

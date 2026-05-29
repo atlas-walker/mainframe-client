@@ -29,7 +29,7 @@ import com.bns.etbic.craft.as400.waits.ExpectedCondition;
 
 public final class As400Driver implements AutoCloseable {
 
-    private final As400Options options;
+    private final As400Config config;
     private final ScreenshotRenderer renderer;
 
     private Session5250 session;
@@ -38,23 +38,23 @@ public final class As400Driver implements AutoCloseable {
     private HeadedWindow headed;
     private boolean connected;
 
-    private As400Driver(As400Options options, ScreenshotRenderer renderer) {
-        this.options = options;
-        this.renderer = renderer;
+    public As400Driver(As400Config config) {
+        this(config, new ScreenshotRenderer());
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public As400Driver(As400Config config, ScreenshotRenderer renderer) {
+        this.config = config;
+        this.renderer = renderer;
     }
 
     public synchronized void connect() {
         if (connected) return;
-        session = SessionFactory.open(options);
+        session = SessionFactory.open(config);
         session.connect();
         screen = session.getScreen();
         sync = new ScreenSync(screen);
-        if (!options.headless()) {
-            headed = new HeadedWindow(options.sessionName() + " — " + options.host(), session);
+        if (!config.headless()) {
+            headed = new HeadedWindow(config.sessionName() + " — " + config.host(), session);
         }
         connected = true;
     }
@@ -194,7 +194,7 @@ public final class As400Driver implements AutoCloseable {
      * @return el snapshot de la pantalla ya repintada y lista.
      */
     public ScreenSnapshot pressAndWait(Key key) {
-        return pressAndWait(key, options.defaultTimeout());
+        return pressAndWait(key, config.defaultTimeout());
     }
 
     public ScreenSnapshot pressAndWait(Key key, Duration timeout) {
@@ -223,7 +223,7 @@ public final class As400Driver implements AutoCloseable {
     }
 
     public <T> T waitFor(ExpectedCondition<T> condition) {
-        return waitFor(condition, options.defaultTimeout());
+        return waitFor(condition, config.defaultTimeout());
     }
 
     public <T> T waitFor(ExpectedCondition<T> condition, Duration timeout) {
@@ -318,40 +318,6 @@ public final class As400Driver implements AutoCloseable {
                 screen.sendKeys(spaces.toString());
                 screen.setCursor(row, col);
             }
-        }
-    }
-
-    public static final class Builder {
-        private As400Options.Builder optsBuilder = As400Options.builder();
-        private ScreenshotRenderer renderer;
-
-        public Builder host(String host)              { optsBuilder.host(host); return this; }
-        public Builder port(int port)                 { optsBuilder.port(port); return this; }
-        public Builder sslType(String sslType)        { optsBuilder.sslType(sslType); return this; }
-        public Builder codePage(String codePage)      { optsBuilder.codePage(codePage); return this; }
-        public Builder deviceName(String deviceName)  { optsBuilder.deviceName(deviceName); return this; }
-        public Builder screenSize(As400Options.ScreenSize sz) { optsBuilder.screenSize(sz); return this; }
-        public Builder enhancedTn(boolean on)         { optsBuilder.enhancedTn(on); return this; }
-        public Builder headless(boolean on)           { optsBuilder.headless(on); return this; }
-        public Builder headed()                       { optsBuilder.headed(); return this; }
-        public Builder defaultTimeout(Duration t)     { optsBuilder.defaultTimeout(t); return this; }
-        public Builder sessionName(String name)       { optsBuilder.sessionName(name); return this; }
-        public Builder renderer(ScreenshotRenderer r) { this.renderer = r; return this; }
-
-        public Builder options(As400Options opts) {
-            this.optsBuilder = As400Options.builder()
-                .host(opts.host()).port(opts.port())
-                .sslType(opts.sslType()).codePage(opts.codePage())
-                .deviceName(opts.deviceName()).screenSize(opts.screenSize())
-                .enhancedTn(opts.enhancedTn()).headless(opts.headless())
-                .defaultTimeout(opts.defaultTimeout()).sessionName(opts.sessionName());
-            return this;
-        }
-
-        public As400Driver build() {
-            As400Options opts = optsBuilder.build();
-            ScreenshotRenderer r = (renderer != null) ? renderer : new ScreenshotRenderer();
-            return new As400Driver(opts, r);
         }
     }
 }
