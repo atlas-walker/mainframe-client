@@ -13,38 +13,95 @@ import com.bns.etbic.craft.as400.elements.As400Field;
 import com.bns.etbic.craft.as400.elements.ScreenRegion;
 import com.bns.etbic.craft.as400.elements.ScreenSnapshot;
 
+/**
+ * Factory of {@link Locator}s for finding input fields and text regions on a 5250
+ * screen, by position, by nearby label, by index, or by text/pattern.
+ *
+ * @author Andres Acosta
+ * @since 0.1.0
+ */
 public final class By {
 
     private By() {}
 
+    /**
+     * Locates the input field at an exact position.
+     *
+     * @param row the 1-based row
+     * @param col the 1-based column
+     * @return a locator for the field at that position
+     */
     public static Locator<As400Field> at(int row, int col) {
         return new AtPositionLocator(row, col);
     }
 
+    /**
+     * Locates a fixed-length text region at an exact position.
+     *
+     * @param row    the 1-based row
+     * @param col    the 1-based starting column
+     * @param length the region length, in characters
+     * @return a locator for the text region
+     */
     public static Locator<ScreenRegion> textAt(int row, int col, int length) {
         return new TextAtLocator(row, col, length);
     }
 
+    /**
+     * Locates the first input field to the right of a label on the same row.
+     *
+     * @param labelText the label text to search for
+     * @return a locator for the field following the label
+     */
     public static Locator<As400Field> labelLeftOf(String labelText) {
         return new LabelLeftOfLocator(labelText);
     }
 
+    /**
+     * Locates the first input field below a label, in the label's column.
+     *
+     * @param labelText the label text to search for
+     * @return a locator for the field beneath the label
+     */
     public static Locator<As400Field> labelAbove(String labelText) {
         return new LabelAboveLocator(labelText);
     }
 
+    /**
+     * Locates an input field by its 1-based order on the screen.
+     *
+     * @param oneBasedIndex the 1-based field index
+     * @return a locator for that field
+     */
     public static Locator<As400Field> fieldIndex(int oneBasedIndex) {
         return new FieldIndexLocator(oneBasedIndex);
     }
 
+    /**
+     * Locates a region containing the given literal text.
+     *
+     * @param needle the literal text to find (matched verbatim)
+     * @return a locator for the matching region
+     */
     public static Locator<ScreenRegion> containingText(String needle) {
         return new ContainingTextLocator(Pattern.quote(needle));
     }
 
+    /**
+     * Locates a region matching the given regular expression.
+     *
+     * @param regex the regular expression to match
+     * @return a locator for the matching region
+     */
     public static Locator<ScreenRegion> matching(String regex) {
         return new ContainingTextLocator(regex);
     }
 
+    /**
+     * Locates the first input field on the screen.
+     *
+     * @return a locator for the first input field
+     */
     public static Locator<As400Field> firstInputField() {
         return new FirstInputFieldLocator();
     }

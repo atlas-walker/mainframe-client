@@ -10,6 +10,14 @@ import java.awt.image.BufferedImage;
 import org.tn5250j.TN5250jConstants;
 import com.bns.etbic.craft.as400.elements.ScreenSnapshot;
 
+/**
+ * Renders a {@link ScreenSnapshot} into a {@link BufferedImage} using a monospaced
+ * font, honoring 5250 color, reverse-video, underline and non-display attributes and
+ * optionally drawing the cursor.
+ *
+ * @author Andres Acosta
+ * @since 0.1.0
+ */
 public final class ScreenshotRenderer {
 
     private final ColorPalette palette;
@@ -18,14 +26,28 @@ public final class ScreenshotRenderer {
     private final int cellHeight;
     private final boolean drawCursor;
 
+    /** Creates a renderer with the default palette, a 14&nbsp;pt font and the cursor drawn. */
     public ScreenshotRenderer() {
         this(ColorPalette.defaultPalette(), 14);
     }
 
+    /**
+     * Creates a renderer with the cursor drawn.
+     *
+     * @param palette  the color palette
+     * @param fontSize the monospaced font size, in points
+     */
     public ScreenshotRenderer(ColorPalette palette, int fontSize) {
         this(palette, fontSize, true);
     }
 
+    /**
+     * Creates a renderer.
+     *
+     * @param palette    the color palette
+     * @param fontSize   the monospaced font size, in points
+     * @param drawCursor whether to draw the cursor position
+     */
     public ScreenshotRenderer(ColorPalette palette, int fontSize, boolean drawCursor) {
         this.palette = palette;
         this.fontSize = fontSize;
@@ -40,6 +62,12 @@ public final class ScreenshotRenderer {
         g.dispose();
     }
 
+    /**
+     * Renders a screen snapshot into an image.
+     *
+     * @param snap the snapshot to render
+     * @return the rendered image
+     */
     public BufferedImage render(ScreenSnapshot snap) {
         int width = snap.cols() * cellWidth;
         int height = snap.rows() * cellHeight;
@@ -113,6 +141,17 @@ public final class ScreenshotRenderer {
         }
     }
 
+    /**
+     * Returns the width of one character cell.
+     *
+     * @return the cell width, in pixels
+     */
     public int cellWidth()  { return cellWidth; }
+
+    /**
+     * Returns the height of one character cell.
+     *
+     * @return the cell height, in pixels
+     */
     public int cellHeight() { return cellHeight; }
 }

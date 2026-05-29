@@ -78,6 +78,7 @@ public final class As400Driver implements AutoCloseable {
         this.renderer = renderer;
     }
 
+    /** Opens the session and, in headed mode, the terminal window. No-op if already connected. */
     public synchronized void connect() {
         if (connected) return;
         session = SessionFactory.open(config);
@@ -90,6 +91,7 @@ public final class As400Driver implements AutoCloseable {
         connected = true;
     }
 
+    /** Disconnects the session and releases resources. No-op if not connected. */
     public synchronized void disconnect() {
         if (!connected) return;
         try {
@@ -135,74 +137,150 @@ public final class As400Driver implements AutoCloseable {
     }
 
     /**
-     * True when running in headed mode and the window has not been disposed.
+     * Tells whether a headed window is currently open.
+     *
+     * @return {@code true} when running in headed mode and the window has not been disposed
      */
     public boolean isHeadedWindowOpen() {
         return headed != null && !headed.isDisposed();
     }
 
+    /**
+     * Tells whether the driver is connected.
+     *
+     * @return {@code true} if the driver is connected and the session is live
+     */
     public boolean isConnected() {
         return connected && session != null && session.isConnected();
     }
 
+    /** Disconnects the session ({@link AutoCloseable} support). */
     @Override
     public void close() {
         disconnect();
     }
 
+    /**
+     * Takes an immutable snapshot of the current screen.
+     *
+     * @return a snapshot of the current screen
+     */
     public ScreenSnapshot getScreen() {
         ensureConnected();
         return ScreenSnapshot.take(screen);
     }
 
+    /**
+     * Renders the current screen as text.
+     *
+     * @return the current screen as a single newline-separated string
+     */
     public String screenAsText() {
         return getScreen().allText();
     }
 
+    /**
+     * Returns the current cursor row.
+     *
+     * @return the 1-based cursor row
+     */
     public int cursorRow() {
         ensureConnected();
         return screen.getCurrentRow();
     }
 
+    /**
+     * Returns the current cursor column.
+     *
+     * @return the 1-based cursor column
+     */
     public int cursorCol() {
         ensureConnected();
         return screen.getCurrentCol();
     }
 
+    /**
+     * Resolves a single element on the current screen.
+     *
+     * @param by  the locator
+     * @param <T> the located element type
+     * @return the matching element
+     */
     public <T> T find(Locator<T> by) {
         ensureConnected();
         return by.locate(currentContext());
     }
 
+    /**
+     * Resolves every element matching a locator on the current screen.
+     *
+     * @param by  the locator
+     * @param <T> the located element type
+     * @return all matching elements
+     */
     public <T> List<T> findAll(Locator<T> by) {
         ensureConnected();
         return by.locateAll(currentContext());
     }
 
+    /**
+     * Convenience for {@link #find(Locator)} returning a field.
+     *
+     * @param by the field locator
+     * @return the matching field
+     */
     public As400Field findField(Locator<As400Field> by) {
         return find(by);
     }
 
+    /**
+     * Convenience for {@link #find(Locator)} returning a text region.
+     *
+     * @param by the text locator
+     * @return the matching text region
+     */
     public ScreenRegion findText(Locator<ScreenRegion> by) {
         return find(by);
     }
 
+    /**
+     * Sends text at the current cursor position.
+     *
+     * @param text the text to type
+     */
     public void type(String text) {
         ensureConnected();
         screen.sendKeys(text);
     }
 
+    /**
+     * Moves the cursor to a position and sends text there.
+     *
+     * @param row  the 1-based row
+     * @param col  the 1-based column
+     * @param text the text to type
+     */
     public void typeAt(int row, int col, String text) {
         ensureConnected();
         screen.setCursor(row, col);
         screen.sendKeys(text);
     }
 
+    /**
+     * Sends a single key.
+     *
+     * @param key the key to press
+     */
     public void press(Key key) {
         ensureConnected();
         screen.sendKeys(key.mnemonic());
     }
 
+    /**
+     * Sends several keys in sequence.
+     *
+     * @param keys the keys to press, in order
+     */
     public void press(Key... keys) {
         ensureConnected();
         StringBuilder sb = new StringBuilder();
@@ -213,21 +291,32 @@ public final class As400Driver implements AutoCloseable {
     }
 
     /**
-     * Presiona una tecla y espera a que el HOST responda. Captura la pantalla
-     * actual, envía la tecla y bloquea hasta que el host repinta (un cambio de
-     * pantalla posterior al envío) y el teclado vuelve a quedar listo para entrada.
+     * Presses a key and waits for the host to respond, using the configured default
+     * timeout. Captures the current screen, sends the key, and blocks until the host
+     * repaints (a screen change after the send) and the keyboard is ready for input
+     * again.
      *
-     * <p>Es la espera correcta cuando NO sabes qué texto traerá la siguiente
-     * pantalla: a diferencia de {@code Thread.sleep} (que puede leer la pantalla
-     * vieja) o de {@code screenStable} (que puede declarar "estable" la pantalla
-     * previa si el host tarda), aquí se ancla al evento real de repintado.
+     * <p>This is the correct wait when the next screen's text is unknown: unlike
+     * {@code Thread.sleep} (which may read the stale screen) or {@code screenStable}
+     * (which may declare the previous screen "stable" if the host is slow), it anchors
+     * to the real repaint event.
      *
-     * @return el snapshot de la pantalla ya repintada y lista.
+     * @param key the key to press
+     * @return the snapshot of the repainted, ready screen
+     * @throws As400Exception if the host does not respond within the timeout
      */
     public ScreenSnapshot pressAndWait(Key key) {
         return pressAndWait(key, config.defaultTimeout());
     }
 
+    /**
+     * Presses a key and waits for the host to respond, up to the given timeout.
+     *
+     * @param key     the key to press
+     * @param timeout the maximum time to wait for the host
+     * @return the snapshot of the repainted, ready screen
+     * @throws As400Exception if the host does not respond within {@code timeout}
+     */
     public ScreenSnapshot pressAndWait(Key key, Duration timeout) {
         ensureConnected();
         long baseline = sync.lastChangeNanos();
@@ -253,10 +342,27 @@ public final class As400Driver implements AutoCloseable {
         }
     }
 
+    /**
+     * Waits for a condition to be met, using the configured default timeout.
+     *
+     * @param condition the condition to wait for
+     * @param <T>       the value produced when the condition is met
+     * @return the condition's result
+     * @throws As400Exception if the condition is not met within the timeout
+     */
     public <T> T waitFor(ExpectedCondition<T> condition) {
         return waitFor(condition, config.defaultTimeout());
     }
 
+    /**
+     * Waits for a condition to be met, up to the given timeout.
+     *
+     * @param condition the condition to wait for
+     * @param timeout   the maximum time to wait
+     * @param <T>       the value produced when the condition is met
+     * @return the condition's result
+     * @throws As400Exception if the condition is not met within {@code timeout}
+     */
     public <T> T waitFor(ExpectedCondition<T> condition, Duration timeout) {
         ensureConnected();
         long deadline = System.nanoTime() + timeout.toNanos();
@@ -281,14 +387,36 @@ public final class As400Driver implements AutoCloseable {
         }
     }
 
+    /**
+     * Renders an image of the current screen.
+     *
+     * @return an image of the current screen
+     */
     public BufferedImage screenshot() {
         return renderer.render(getScreen());
     }
 
+    /**
+     * Writes a PNG screenshot of the current screen to a file, creating parent
+     * directories as needed.
+     *
+     * @param file the destination file
+     * @return {@code file}, for convenience
+     * @throws As400Exception if the image cannot be written
+     */
     public Path screenshot(Path file) {
         return screenshot(file, ScreenshotFormat.PNG);
     }
 
+    /**
+     * Writes a screenshot of the current screen to a file in the given format,
+     * creating parent directories as needed.
+     *
+     * @param file   the destination file
+     * @param format the image format
+     * @return {@code file}, for convenience
+     * @throws As400Exception if the image cannot be written
+     */
     public Path screenshot(Path file, ScreenshotFormat format) {
         BufferedImage img = screenshot();
         try {
@@ -302,11 +430,21 @@ public final class As400Driver implements AutoCloseable {
         }
     }
 
+    /**
+     * Exposes the underlying tn5250j session for operations not covered by the driver.
+     *
+     * @return the underlying tn5250j session
+     */
     public Session5250 rawSession() {
         ensureConnected();
         return session;
     }
 
+    /**
+     * Exposes the underlying tn5250j screen for operations not covered by the driver.
+     *
+     * @return the underlying tn5250j screen
+     */
     public Screen5250 rawScreen() {
         ensureConnected();
         return screen;

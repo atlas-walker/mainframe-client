@@ -26,6 +26,9 @@ import org.tn5250j.SessionPanel;
  *   <li>{@link #close()} programmatically disposes the window.</li>
  *   <li>{@link #awaitClose()} blocks until the window is disposed.</li>
  * </ul>
+ *
+ * @author Andres Acosta
+ * @since 0.1.0
  */
 public final class HeadedWindow {
 
@@ -34,6 +37,13 @@ public final class HeadedWindow {
     private final CountDownLatch closed = new CountDownLatch(1);
     private volatile boolean disposed;
 
+    /**
+     * Builds and shows the window for the given session.
+     *
+     * @param title   the window title
+     * @param session the live 5250 session to display
+     * @throws IllegalStateException if the JVM is running headless
+     */
     public HeadedWindow(String title, Session5250 session) {
         if (GraphicsEnvironment.isHeadless()) {
             throw new IllegalStateException("Cannot open headed window in headless JVM");
@@ -79,6 +89,7 @@ public final class HeadedWindow {
         });
     }
 
+    /** Programmatically disposes the window. No-op if already disposed. */
     public void close() {
         if (disposed) return;
         SwingUtilities.invokeLater(() -> {
@@ -88,14 +99,29 @@ public final class HeadedWindow {
         });
     }
 
+    /**
+     * Blocks the calling thread until the window is disposed.
+     *
+     * @throws InterruptedException if interrupted while waiting
+     */
     public void awaitClose() throws InterruptedException {
         closed.await();
     }
 
+    /**
+     * Tells whether the window has been disposed.
+     *
+     * @return {@code true} once the window has been disposed
+     */
     public boolean isDisposed() {
         return disposed;
     }
 
+    /**
+     * Exposes the underlying tn5250j session panel.
+     *
+     * @return the session panel
+     */
     public SessionPanel panel() {
         return panel;
     }

@@ -20,6 +20,10 @@ public abstract class BasePage {
     /** The shared, connected driver backing this page. */
     protected final As400Driver as400 = As400Factory.getDriver();
 
+    /** Creates a page bound to the shared driver. */
+    protected BasePage() {
+    }
+
     /**
      * Tells whether the current host screen contains the given text.
      *

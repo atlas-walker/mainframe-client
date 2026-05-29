@@ -4,6 +4,17 @@ import org.tn5250j.TN5250jConstants;
 import org.tn5250j.framework.tn5250.Screen5250;
 import org.tn5250j.framework.tn5250.ScreenOIA;
 
+/**
+ * Immutable snapshot of a 5250 screen at a single instant: its geometry, cursor
+ * position, keyboard/input state and the text, color and extended-attribute planes.
+ *
+ * <p>Because it is a frozen copy, assertions made against a snapshot are stable even
+ * if the host repaints afterwards. Obtain one with {@link #take(Screen5250)} (the
+ * driver does this internally for {@code getScreen()} and the wait loops).
+ *
+ * @author Andres Acosta
+ * @since 0.1.0
+ */
 public final class ScreenSnapshot {
 
     private final int rows;
@@ -32,6 +43,12 @@ public final class ScreenSnapshot {
         this.timestamp = timestamp;
     }
 
+    /**
+     * Captures the current state of the given emulator screen.
+     *
+     * @param screen the live emulator screen
+     * @return an immutable snapshot of it
+     */
     public static ScreenSnapshot take(Screen5250 screen) {
         int rows = screen.getRows();
         int cols = screen.getColumns();
@@ -48,31 +65,98 @@ public final class ScreenSnapshot {
         );
     }
 
+    /**
+     * Returns the screen height.
+     *
+     * @return the number of rows
+     */
     public int rows()           { return rows; }
+
+    /**
+     * Returns the screen width.
+     *
+     * @return the number of columns
+     */
     public int cols()           { return cols; }
+
+    /**
+     * Returns the cursor row at capture time.
+     *
+     * @return the 1-based cursor row
+     */
     public int cursorRow()      { return cursorRow; }
+
+    /**
+     * Returns the cursor column at capture time.
+     *
+     * @return the 1-based cursor column
+     */
     public int cursorCol()      { return cursorCol; }
+
+    /**
+     * Returns when the snapshot was taken.
+     *
+     * @return the capture time, in epoch milliseconds
+     */
     public long timestamp()     { return timestamp; }
+
+    /**
+     * Tells whether the keyboard was locked at capture time.
+     *
+     * @return {@code true} if the keyboard was locked
+     */
     public boolean keyboardLocked() { return keyboardLocked; }
 
+    /**
+     * Tells whether the host is ready to accept keystrokes.
+     *
+     * @return {@code true} if input is not inhibited and the keyboard is unlocked
+     */
     public boolean inputReady() {
         return oiaInputInhibited == ScreenOIA.INPUTINHIBITED_NOTINHIBITED && !keyboardLocked;
     }
 
+    /**
+     * Returns the character at a position, mapping nulls to spaces.
+     *
+     * @param row1Based the 1-based row
+     * @param col1Based the 1-based column
+     * @return the character at that position
+     */
     public char charAt(int row1Based, int col1Based) {
         int idx = index(row1Based, col1Based);
         char ch = text[idx];
         return ch == 0 ? ' ' : ch;
     }
 
+    /**
+     * Returns the color attribute byte at a position.
+     *
+     * @param row1Based the 1-based row
+     * @param col1Based the 1-based column
+     * @return the color attribute byte
+     */
     public int colorAt(int row1Based, int col1Based) {
         return color[index(row1Based, col1Based)];
     }
 
+    /**
+     * Returns the extended attribute byte at a position.
+     *
+     * @param row1Based the 1-based row
+     * @param col1Based the 1-based column
+     * @return the extended attribute byte
+     */
     public int extendedAt(int row1Based, int col1Based) {
         return extended[index(row1Based, col1Based)];
     }
 
+    /**
+     * Returns the full text of a row, with nulls rendered as spaces.
+     *
+     * @param row1Based the 1-based row
+     * @return the row text
+     */
     public String row(int row1Based) {
         StringBuilder sb = new StringBuilder(cols);
         int base = (row1Based - 1) * cols;
@@ -83,6 +167,11 @@ public final class ScreenSnapshot {
         return sb.toString();
     }
 
+    /**
+     * Returns every row of the screen.
+     *
+     * @return the rows as a string array
+     */
     public String[] allRows() {
         String[] out = new String[rows];
         for (int r = 1; r <= rows; r++) {
@@ -91,6 +180,11 @@ public final class ScreenSnapshot {
         return out;
     }
 
+    /**
+     * Returns the whole screen as text.
+     *
+     * @return the screen as a single newline-separated string
+     */
     public String allText() {
         StringBuilder sb = new StringBuilder(rows * (cols + 1));
         for (int r = 1; r <= rows; r++) {
@@ -100,6 +194,14 @@ public final class ScreenSnapshot {
         return sb.toString();
     }
 
+    /**
+     * Returns a fixed-length substring of the screen starting at a position.
+     *
+     * @param row1Based the 1-based row
+     * @param col1Based the 1-based starting column
+     * @param length    the number of characters to read
+     * @return the text at that position
+     */
     public String textAt(int row1Based, int col1Based, int length) {
         StringBuilder sb = new StringBuilder(length);
         int base = (row1Based - 1) * cols + (col1Based - 1);
@@ -110,13 +212,36 @@ public final class ScreenSnapshot {
         return sb.toString();
     }
 
+    /**
+     * Tells whether the whole screen text contains the given needle.
+     *
+     * @param needle the text to look for ({@code null} or empty matches)
+     * @return {@code true} if the screen contains {@code needle}
+     */
     public boolean contains(String needle) {
         if (needle == null || needle.isEmpty()) return true;
         return allText().contains(needle);
     }
 
+    /**
+     * Returns the raw text plane.
+     *
+     * @return the text plane (row-major, may contain nulls)
+     */
     public char[] textPlane()     { return text; }
+
+    /**
+     * Returns the raw color-attribute plane.
+     *
+     * @return the color plane (row-major)
+     */
     public char[] colorPlane()    { return color; }
+
+    /**
+     * Returns the raw extended-attribute plane.
+     *
+     * @return the extended-attribute plane (row-major)
+     */
     public char[] extendedPlane() { return extended; }
 
     private int index(int row1Based, int col1Based) {

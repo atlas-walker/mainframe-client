@@ -5,10 +5,23 @@ import java.util.Arrays;
 
 import com.bns.etbic.craft.as400.elements.ScreenSnapshot;
 
+/**
+ * Factory of the {@link ExpectedCondition}s used with the driver's {@code waitFor}
+ * methods to wait for specific host states (input ready, text present, cursor
+ * position, screen stability).
+ *
+ * @author Andres Acosta
+ * @since 0.1.0
+ */
 public final class As400Conditions {
 
     private As400Conditions() {}
 
+    /**
+     * Waits until the host is ready to accept keystrokes.
+     *
+     * @return a condition met when the keyboard is unlocked and ready for input
+     */
     public static ExpectedCondition<Boolean> inputReady() {
         return new ExpectedCondition<Boolean>() {
             @Override public Boolean apply(ScreenSnapshot snap) {
@@ -18,6 +31,12 @@ public final class As400Conditions {
         };
     }
 
+    /**
+     * Waits until a piece of text appears anywhere on the screen.
+     *
+     * @param needle the text to look for anywhere on the screen
+     * @return a condition met when the screen contains {@code needle}
+     */
     public static ExpectedCondition<Boolean> textPresent(final String needle) {
         return new ExpectedCondition<Boolean>() {
             @Override public Boolean apply(ScreenSnapshot snap) {
@@ -27,6 +46,13 @@ public final class As400Conditions {
         };
     }
 
+    /**
+     * Waits until a piece of text appears on a specific row.
+     *
+     * @param row    the 1-based row to inspect
+     * @param needle the text to look for on that row
+     * @return a condition met when the given row contains {@code needle}
+     */
     public static ExpectedCondition<Boolean> textPresent(final int row, final String needle) {
         return new ExpectedCondition<Boolean>() {
             @Override public Boolean apply(ScreenSnapshot snap) {
@@ -38,6 +64,14 @@ public final class As400Conditions {
         };
     }
 
+    /**
+     * Waits until an exact text appears at a specific position.
+     *
+     * @param row      the 1-based row
+     * @param col      the 1-based column
+     * @param expected the exact text expected starting at that position
+     * @return a condition met when the text at the position equals {@code expected}
+     */
     public static ExpectedCondition<Boolean> textAt(final int row, final int col, final String expected) {
         return new ExpectedCondition<Boolean>() {
             @Override public Boolean apply(ScreenSnapshot snap) {
@@ -50,6 +84,13 @@ public final class As400Conditions {
         };
     }
 
+    /**
+     * Waits until the cursor reaches a specific position.
+     *
+     * @param row the 1-based row
+     * @param col the 1-based column
+     * @return a condition met when the cursor sits at the given position
+     */
     public static ExpectedCondition<Boolean> cursorAt(final int row, final int col) {
         return new ExpectedCondition<Boolean>() {
             @Override public Boolean apply(ScreenSnapshot snap) {
@@ -61,6 +102,13 @@ public final class As400Conditions {
         };
     }
 
+    /**
+     * Waits until the screen content stops changing for a quiet window. Useful when
+     * the destination text is unknown but the screen should settle.
+     *
+     * @param window the quiet period the screen must remain unchanged for
+     * @return a condition met once the screen has been stable for {@code window}
+     */
     public static ExpectedCondition<Boolean> screenStable(final Duration window) {
         final long quietNanos = window.toNanos();
         return new ExpectedCondition<Boolean>() {

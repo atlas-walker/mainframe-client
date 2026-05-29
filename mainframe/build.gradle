@@ -60,3 +60,10 @@ test {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
+
+javadoc {
+    options.encoding = 'UTF-8'
+    // Full doclint and fail the build on any javadoc warning, keeping the docs clean.
+    options.addBooleanOption('Xdoclint:all', true)
+    options.addBooleanOption('Werror', true)
+}

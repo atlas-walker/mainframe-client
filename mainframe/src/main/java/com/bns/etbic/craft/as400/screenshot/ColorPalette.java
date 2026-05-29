@@ -4,6 +4,12 @@ import java.awt.Color;
 
 import org.tn5250j.TN5250jConstants;
 
+/**
+ * Maps 5250 color attribute bytes to AWT {@link Color}s for screenshot rendering.
+ *
+ * @author Andres Acosta
+ * @since 0.1.0
+ */
 public final class ColorPalette {
 
     private final Color background;
@@ -17,6 +23,20 @@ public final class ColorPalette {
     private final Color white;
     private final Color cursor;
 
+    /**
+     * Creates a palette from explicit colors.
+     *
+     * @param background        the screen background color
+     * @param foregroundDefault the fallback foreground color
+     * @param blue              the color for the 5250 blue attribute
+     * @param cyan              the color for the 5250 cyan/turquoise attribute
+     * @param red               the color for the 5250 red attribute
+     * @param magenta           the color for the 5250 magenta/pink attribute
+     * @param yellow            the color for the 5250 yellow attribute
+     * @param green             the color for the 5250 green attribute
+     * @param white             the color for the 5250 white attribute
+     * @param cursor            the color used to draw the cursor
+     */
     public ColorPalette(Color background, Color foregroundDefault,
                         Color blue, Color cyan, Color red, Color magenta,
                         Color yellow, Color green, Color white, Color cursor) {
@@ -32,6 +52,11 @@ public final class ColorPalette {
         this.cursor = cursor;
     }
 
+    /**
+     * Returns a green-on-black palette resembling a classic 5250 terminal.
+     *
+     * @return the default palette
+     */
     public static ColorPalette defaultPalette() {
         return new ColorPalette(
             Color.black,
@@ -47,15 +72,44 @@ public final class ColorPalette {
         );
     }
 
+    /**
+     * Returns the screen background color.
+     *
+     * @return the background color
+     */
     public Color background()        { return background; }
+
+    /**
+     * Returns the fallback foreground color.
+     *
+     * @return the default foreground color
+     */
     public Color foregroundDefault() { return foregroundDefault; }
+
+    /**
+     * Returns the cursor color.
+     *
+     * @return the cursor color
+     */
     public Color cursor()            { return cursor; }
 
+    /**
+     * Resolves the foreground color encoded in a 5250 color byte.
+     *
+     * @param colorByte the 5250 color attribute byte
+     * @return the foreground color, or the default when unmapped
+     */
     public Color foreground(int colorByte) {
         int idx = colorByte & 0x00FF;
         return mapIndex(idx, foregroundDefault);
     }
 
+    /**
+     * Resolves the background color encoded in a 5250 color byte.
+     *
+     * @param colorByte the 5250 color attribute byte
+     * @return the background color, or the screen background when unmapped
+     */
     public Color backgroundOf(int colorByte) {
         int idx = (colorByte & 0xFF00) >> 8;
         return mapIndex(idx, background);
