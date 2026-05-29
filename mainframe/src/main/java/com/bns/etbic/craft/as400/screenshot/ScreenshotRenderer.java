@@ -15,24 +15,37 @@ import com.bns.etbic.craft.as400.elements.ScreenSnapshot;
  * font, honoring 5250 color, reverse-video, underline and non-display attributes and
  * optionally drawing the cursor.
  *
+ * <p>The image resolution is driven by the font size: a larger font yields a larger,
+ * sharper screenshot. A uniform {@linkplain #ScreenshotRenderer(ColorPalette, int,
+ * boolean, int) padding} margin is drawn around the screen so the text never sits
+ * flush against the edges — this keeps the last row readable when a report viewer
+ * (for example Extent) scales the image or wraps it in a bordered container.
+ *
  * @author Andres Acosta
  * @since 1.0.14
  */
 public final class ScreenshotRenderer {
 
+    /** Default font size, chosen for a crisp, HD-sized screenshot. */
+    private static final int DEFAULT_FONT_SIZE = 24;
+
+    /** Default margin, in pixels, drawn around the screen content. */
+    private static final int DEFAULT_PADDING = 12;
+
     private final ColorPalette palette;
     private final int fontSize;
+    private final int padding;
     private final int cellWidth;
     private final int cellHeight;
     private final boolean drawCursor;
 
-    /** Creates a renderer with the default palette, a 14&nbsp;pt font and the cursor drawn. */
+    /** Creates a renderer with the default palette, font size, padding and the cursor drawn. */
     public ScreenshotRenderer() {
-        this(ColorPalette.defaultPalette(), 14);
+        this(ColorPalette.defaultPalette(), DEFAULT_FONT_SIZE);
     }
 
     /**
-     * Creates a renderer with the cursor drawn.
+     * Creates a renderer with the default padding and the cursor drawn.
      *
      * @param palette  the color palette
      * @param fontSize the monospaced font size, in points
@@ -42,16 +55,29 @@ public final class ScreenshotRenderer {
     }
 
     /**
-     * Creates a renderer.
+     * Creates a renderer with the default padding.
      *
      * @param palette    the color palette
      * @param fontSize   the monospaced font size, in points
      * @param drawCursor whether to draw the cursor position
      */
     public ScreenshotRenderer(ColorPalette palette, int fontSize, boolean drawCursor) {
+        this(palette, fontSize, drawCursor, DEFAULT_PADDING);
+    }
+
+    /**
+     * Creates a renderer with full control over its settings.
+     *
+     * @param palette    the color palette
+     * @param fontSize   the monospaced font size, in points (drives the resolution)
+     * @param drawCursor whether to draw the cursor position
+     * @param padding    the margin, in pixels, drawn around the screen content
+     */
+    public ScreenshotRenderer(ColorPalette palette, int fontSize, boolean drawCursor, int padding) {
         this.palette = palette;
         this.fontSize = fontSize;
         this.drawCursor = drawCursor;
+        this.padding = Math.max(0, padding);
 
         BufferedImage probe = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = probe.createGraphics();
@@ -69,8 +95,8 @@ public final class ScreenshotRenderer {
      * @return the rendered image
      */
     public BufferedImage render(ScreenSnapshot snap) {
-        int width = snap.cols() * cellWidth;
-        int height = snap.rows() * cellHeight;
+        int width = snap.cols() * cellWidth + 2 * padding;
+        int height = snap.rows() * cellHeight + 2 * padding;
 
         BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = img.createGraphics();
@@ -88,9 +114,9 @@ public final class ScreenshotRenderer {
         int ascent = fm.getAscent();
 
         for (int r = 1; r <= snap.rows(); r++) {
-            int y = (r - 1) * cellHeight;
+            int y = padding + (r - 1) * cellHeight;
             for (int c = 1; c <= snap.cols(); c++) {
-                int x = (c - 1) * cellWidth;
+                int x = padding + (c - 1) * cellWidth;
                 drawCell(g, snap, r, c, x, y, ascent);
             }
         }
@@ -99,8 +125,8 @@ public final class ScreenshotRenderer {
             int cr = snap.cursorRow();
             int cc = snap.cursorCol();
             if (cr >= 1 && cr <= snap.rows() && cc >= 1 && cc <= snap.cols()) {
-                int x = (cc - 1) * cellWidth;
-                int y = (cr - 1) * cellHeight;
+                int x = padding + (cc - 1) * cellWidth;
+                int y = padding + (cr - 1) * cellHeight;
                 g.setColor(palette.cursor());
                 g.fillRect(x, y + cellHeight - 2, cellWidth, 2);
             }
